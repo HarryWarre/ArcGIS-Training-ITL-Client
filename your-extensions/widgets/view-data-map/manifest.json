@@ -1,0 +1,25 @@
+{
+  "name": "view-data-map",
+  "label": "view-data-map",
+  "type": "widget",
+  "dependency": ["jimu-arcgis"],
+  "version": "1.14.0",
+  "exbVersion": "1.14.0",
+  "author": "Harry Phan",
+  "description": "The widget made from react table, the sameple to use DataSource : SelectDataSource, DataSouceComponent, and getDS. The instruction will comment inside the file runtime and setting",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": ["en"],
+  "extensions": [
+    {
+      "name": "My store",
+      "point": "REDUX_STORE",
+      "uri": "extensions/my-store"
+    }
+  ],
+  "defaultSize": {
+    "width": 800,
+    "height": 500
+  }
+}

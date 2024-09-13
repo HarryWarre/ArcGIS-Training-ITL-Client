@@ -1,0 +1,17 @@
+{
+  "name": "tab-table-view",
+  "label": "tab-table-view",
+  "type": "widget",
+  "version": "1.14.0",
+  "exbVersion": "1.14.0",
+  "author": "Esri R&D Center Beijing",
+  "description": "This widget will show tab view of 2 datasource: ThuyDai and DongHoKhachHang",
+  "copyright": "",
+  "license": "http://www.apache.org/licenses/LICENSE-2.0",
+  "properties": {},
+  "translatedLocales": ["en"],
+  "defaultSize": {
+    "width": 800,
+    "height": 500
+  }
+}
