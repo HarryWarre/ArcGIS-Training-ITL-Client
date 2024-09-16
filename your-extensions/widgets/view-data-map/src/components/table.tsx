@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
@@ -8,13 +8,24 @@ import React from "react";
 import { DMATable } from "widgets/types/table";
 import { IconButton } from "../../../../node_plugin/node_modules/@mui/material";
 import { ZoomIn } from "../../../../node_plugin/node_modules/@mui/icons-material";
-import { appActions, getAppStore, IMState } from "jimu-core";
-import { useSelector } from "react-redux/es/exports";
-import { MyDMA, setDMA } from "../extensions/my-store";
+import { appActions } from "jimu-core";
 import { useDispatch } from "react-redux";
-import { stringify } from "querystring";
+import { eDMA } from "../extensions/my-store";
+import { JimuMapView } from "jimu-arcgis";
+import Geometry from "@arcgis/core/geometry/Geometry";
 
-const DMA_Table = ({ data }) => {
+const useState = React.useState;
+
+const DMA_Table = ({ data, onClickrow }) => {
+  const [dataTable, setDataTable] = useState([]);
+
+  useEffect(() => {
+    data.forEach((element) => {
+      setDataTable((dataTable) => [...dataTable, element["data"]]);
+    });
+  }, [data]);
+
+  const isLoading = !data || data.length === 0;
   const columns = useMemo<MRT_ColumnDef<DMATable>[]>(
     () => [
       {
@@ -40,18 +51,24 @@ const DMA_Table = ({ data }) => {
 
   const table = useMaterialReactTable({
     columns,
-    data,
+    data: dataTable,
     enableRowActions: true,
+    state: { isLoading: isLoading },
     renderRowActions: ({ row }) => (
-      <IconButton onClick={() => console.info("Edit")}>
+      <IconButton onClick={() => onClickrow(row.original)}>
         <ZoomIn />
       </IconButton>
     ),
     muiTableBodyRowProps: ({ row }) => ({
       onClick: (event) => {
-        // dispatch({ type: "MyDMA" });
         const dma = { ...row.original };
-        dispatch(setDMA(Object.values(dma))); // err
+        dispatch(
+          appActions.widgetStatePropChange(
+            eDMA.storeKey, // Widget ID
+            eDMA.sectionKey,
+            Object.values(dma) // Send Value
+          )
+        ); // err
       },
       sx: {
         cursor: "pointer", //you might want to change the cursor too when adding an onClick
@@ -63,3 +80,16 @@ const DMA_Table = ({ data }) => {
 };
 
 export default DMA_Table;
+
+// Function to zoom testing
+export const zooming = async (jMapView: JimuMapView, geometry: Geometry) => {
+  await jMapView.view.goTo(
+    {
+      target: geometry,
+    },
+    {
+      animate: true,
+      duration: 1000,
+    }
+  );
+};

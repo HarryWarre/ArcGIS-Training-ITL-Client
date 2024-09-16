@@ -18,6 +18,13 @@ import {
 } from "jimu-core";
 import { useSelector } from "react-redux";
 import DMA_Table from "../components/table";
+import { getJimuMapView } from "../../../common/fucntion-map";
+import { mapWidgetId, ProjectGeocodeURL } from "../../../common/constant";
+import { IPolygon } from "@esri/arcgis-rest-types";
+import {
+  mergeGeometry,
+  projectPointGeometryPolygon,
+} from "../../../common/function";
 
 //Declear Hooks
 const useState = React.useState;
@@ -34,17 +41,18 @@ const Widget = (props: AllWidgetProps<any>) => {
   // Access the map
   const { current: _viewManager } = useRef(MapViewManager.getInstance());
 
-  // Declare Geometry
-  // const [geometry, setGeometry] = useState<IPolygon | null>(null);
-
+  const [jimuMapView, setJimuMapView] = useState(null);
   // 3 ref datasource
   let DMARef = useRef<DataSource>(null);
   let DHKHRef = useRef<DataSource>(null);
   let ThuyDaiRef = useRef<DataSource>(null);
 
+  // Highlight ref zone
+  // const highlightHandler = useRef(null);
+
   //3 Data query
   const [DMAQuery, setDMAQuery] = useState([]);
-
+  const [queryDMA, setQueryDMA] = useState(null);
   let timeout = null as any;
 
   useEffect(() => {
@@ -53,6 +61,10 @@ const Widget = (props: AllWidgetProps<any>) => {
 
     clearTimeout(timeout);
     getDs();
+
+    // if (highlightHandler.current) {
+    //   highlightHandler.current?.remove();
+    // }
 
     return () => {
       clearTimeout(timeout);
@@ -63,7 +75,7 @@ const Widget = (props: AllWidgetProps<any>) => {
     if (DMARef.current) {
       getDMAData(DMARef.current);
     }
-  }, [isDataSourcesReady, DMAQuery]);
+  }, [isDataSourcesReady]);
 
   async function getDs() {
     const dsArr: DataSource[] = [];
@@ -90,20 +102,104 @@ const Widget = (props: AllWidgetProps<any>) => {
     const _ds = ds as FeatureLayerDataSource;
 
     const totalDataCount = await _ds?.query({
+      // tên biến
+      // tên biến count total
       // Query params here --------------------> Can Split to const queryParams = {structure of params} if needs
       // outFields: ["*"],
-      outFields: ["OBJECTID", "MADMA", "TENDMA"],
+      outFields: ["OBJECTID", "MADMA", "TENDMA"], // commons => Constant
       where: "OBJECTID is not null",
       returnGeometry: true,
-      page: 2,
+      page: 2, // state
       pageSize: 5,
     });
-    const list = []; // The list will contain records with type JSON
-    totalDataCount.records.forEach((element) => {
-      list.push(element.getData()); // The function retrive data from proxy will convert the Proxy to JSON
-    });
-    // console.log(list);
+
+    const list = totalDataCount.records.map((element) => ({
+      data: element.getData(),
+    }));
+
+    setQueryDMA(totalDataCount);
+
     setDMAQuery(list);
+  };
+
+  //  Function get Datasource from index
+  const getDataSourceForIndex = (index) =>
+    _getFeatureLayerDataSource(props.useDataSources?.[index]?.dataSourceId);
+
+  function _getFeatureLayerDataSource(dataSourceId: string) {
+    return DataSourceManager.getInstance().getDataSource(dataSourceId) as
+      | FeatureLayerDataSource
+      | undefined;
+  }
+
+  const handleSearchOnMap = async (rowData) => {
+    // The record for zoom, this needs info about OBJECTID and MADMA
+    const ds = getDataSourceForIndex(0); // Get first datasource (DMA)
+
+    if (!ds) {
+      alert("khong lay dc du lieu"); // Tích hợp thư viện notify
+      return;
+    }
+
+    const geometryDMA = queryDMA.records.find(
+      (i: any) =>
+        Object.fromEntries(Object.entries(i?.feature?.attributes))?.MADMA ==
+        rowData?.MADMA
+    );
+
+    const geometry = geometryDMA.getGeometry() as IPolygon;
+
+    const jMapView = await getJimuMapView(mapWidgetId, _viewManager); // Declare jMapView & what is mapWidgetId ??
+    // console.log(jMapView);
+    const { geometries } = await projectPointGeometryPolygon(
+      ProjectGeocodeURL,
+      geometry?.spatialReference, // Input Spacial
+      jMapView?.view?.spatialReference, // Expected Spacial
+      geometry?.rings // Point to create the Geometry
+    );
+
+    if (!geometries) {
+      return;
+    }
+
+    /**
+     * Merge Geometries to one shape
+     */
+    const mergedGeometry = mergeGeometry(
+      geometries?.map((geo) => ({
+        type: "point",
+        ...geo,
+        spatialReference: jMapView.view.spatialReference,
+      }))
+    );
+
+    if (!mergedGeometry) {
+      return;
+    }
+
+    // if (highlightHandler.current) {
+    //   highlightHandler.current?.remove();
+    // }
+
+    // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
+
+    // const layterView =
+    //   jMapView.jimuLayerViews[
+    //     mapWidgetId + "-" + props.useDataSources?.[0]?.dataSourceId
+    //   ];
+
+    // highlightHandler.current = (
+    //   layterView as JimuSceneLayerView
+    // ).view.highlight(rowData.OBJECTID);
+
+    // console.log(highlightHandler);
+    // console.log(mergeGeometry);
+
+    // Zoom
+    await jMapView.view.goTo({ target: mergedGeometry } ?? {}, {
+      animate: true,
+      duration: 1000,
+    });
   };
 
   return (
@@ -115,8 +211,8 @@ const Widget = (props: AllWidgetProps<any>) => {
           widgetId={props.id}
         />
       ))}
-
-      {DMAQuery.length > 0 ? <DMA_Table data={DMAQuery} /> : <p>Loading...</p>}
+      {/* {console.log(DMAQuery)} */}
+      <DMA_Table data={DMAQuery} onClickrow={handleSearchOnMap} />
     </>
   );
 };

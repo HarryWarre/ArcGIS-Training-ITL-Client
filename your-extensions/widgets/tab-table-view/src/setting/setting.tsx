@@ -1,4 +1,3 @@
-import { UseDataSources } from "dist/widgets/common/table/tests/config";
 import {
   AllDataSourceTypes,
   IMConfig,
