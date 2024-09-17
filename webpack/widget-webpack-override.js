@@ -30,6 +30,10 @@ module.exports = function (webpackConfig) {
       __dirname,
       "../your-extensions/node_plugin/node_modules/@mui"
     ),
+    "react-toastify": path.resolve(
+      __dirname,
+      "../your-extensions/node_plugin/node_modules/react-toastify"
+    ),
     components: path.resolve(__dirname, "../your-extensons/widgets/common/"),
   });
 

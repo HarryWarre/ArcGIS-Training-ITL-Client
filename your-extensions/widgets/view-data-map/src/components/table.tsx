@@ -11,49 +11,31 @@ import { ZoomIn } from "../../../../node_plugin/node_modules/@mui/icons-material
 import { appActions } from "jimu-core";
 import { useDispatch } from "react-redux";
 import { eDMA } from "../extensions/my-store";
-import { JimuMapView } from "jimu-arcgis";
-import Geometry from "@arcgis/core/geometry/Geometry";
 
 const useState = React.useState;
 
 const DMA_Table = ({ data, onClickrow }) => {
   const [dataTable, setDataTable] = useState([]);
+  const dispatch = useDispatch();
 
   useEffect(() => {
-    data.forEach((element) => {
-      setDataTable((dataTable) => [...dataTable, element["data"]]);
-    });
+    setDataTable(data.map((element) => element["data"]));
   }, [data]);
 
-  const isLoading = !data || data.length === 0;
   const columns = useMemo<MRT_ColumnDef<DMATable>[]>(
     () => [
-      {
-        accessorKey: "OBJECTID",
-        header: "OBJECTID",
-        size: 150,
-      },
-      {
-        accessorKey: "MADMA",
-        header: "Mã DMA",
-        size: 150,
-      },
-      {
-        accessorKey: "TENDMA",
-        header: "Tên DMA",
-        size: 150,
-      },
+      { accessorKey: "OBJECTID", header: "OBJECTID", size: 150 },
+      { accessorKey: "MADMA", header: "Mã DMA", size: 150 },
+      { accessorKey: "TENDMA", header: "Tên DMA", size: 150 },
     ],
     []
   );
-
-  const dispatch = useDispatch();
 
   const table = useMaterialReactTable({
     columns,
     data: dataTable,
     enableRowActions: true,
-    state: { isLoading: isLoading },
+    state: { isLoading: !dataTable.length },
     renderRowActions: ({ row }) => (
       <IconButton onClick={() => onClickrow(row.original)}>
         <ZoomIn />
@@ -80,16 +62,3 @@ const DMA_Table = ({ data, onClickrow }) => {
 };
 
 export default DMA_Table;
-
-// Function to zoom testing
-export const zooming = async (jMapView: JimuMapView, geometry: Geometry) => {
-  await jMapView.view.goTo(
-    {
-      target: geometry,
-    },
-    {
-      animate: true,
-      duration: 1000,
-    }
-  );
-};

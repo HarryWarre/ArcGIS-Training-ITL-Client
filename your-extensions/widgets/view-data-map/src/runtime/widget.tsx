@@ -7,7 +7,11 @@
  * 4. Kiểm tra dataSouce, tạo query params
  * 5. Thực hiện query
  */
-import { FeatureLayerDataSource, MapViewManager } from "jimu-arcgis";
+import {
+  FeatureLayerDataSource,
+  JimuSceneLayerView,
+  MapViewManager,
+} from "jimu-arcgis";
 import {
   AllWidgetProps,
   DataSource,
@@ -19,12 +23,20 @@ import {
 import { useSelector } from "react-redux";
 import DMA_Table from "../components/table";
 import { getJimuMapView } from "../../../common/fucntion-map";
-import { mapWidgetId, ProjectGeocodeURL } from "../../../common/constant";
+import {
+  dmaQueryAtribute,
+  delayTime,
+  mapWidgetId,
+  ProjectGeocodeURL,
+  animationDurationTime,
+} from "../../../common/constant";
 import { IPolygon } from "@esri/arcgis-rest-types";
 import {
   mergeGeometry,
   projectPointGeometryPolygon,
 } from "../../../common/function";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 //Declear Hooks
 const useState = React.useState;
@@ -40,34 +52,33 @@ const Widget = (props: AllWidgetProps<any>) => {
   const [isDataSourcesReady, setIsDataSourceReady] = useState(false);
   // Access the map
   const { current: _viewManager } = useRef(MapViewManager.getInstance());
-
-  const [jimuMapView, setJimuMapView] = useState(null);
   // 3 ref datasource
   let DMARef = useRef<DataSource>(null);
   let DHKHRef = useRef<DataSource>(null);
   let ThuyDaiRef = useRef<DataSource>(null);
-
   // Highlight ref zone
-  // const highlightHandler = useRef(null);
-
+  const highlightHandler = useRef(null);
   //3 Data query
-  const [DMAQuery, setDMAQuery] = useState([]);
-  const [queryDMA, setQueryDMA] = useState(null);
+  const [dataDMA, setDataDMA] = useState(null); // ?
+  // Default setting query param
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+
   let timeout = null as any;
 
   useEffect(() => {
     // Prevent inaccessbility of the widget when the appToken is not avaible
     if (!appToken) return;
-
     clearTimeout(timeout);
     getDs();
 
-    // if (highlightHandler.current) {
-    //   highlightHandler.current?.remove();
-    // }
+    if (highlightHandler.current) {
+      highlightHandler.current?.remove();
+    }
 
     return () => {
       clearTimeout(timeout);
+      highlightHandler.current = null;
     };
   }, [appToken]);
 
@@ -94,32 +105,28 @@ const Widget = (props: AllWidgetProps<any>) => {
       ThuyDaiRef.current = dsArr[1];
       clearTimeout(timeout);
     } else {
-      setTimeout(() => getDs(), 300);
+      setTimeout(() => getDs(), delayTime);
     } // Default inteval
   }
 
   const getDMAData = async (ds: DataSource) => {
     const _ds = ds as FeatureLayerDataSource;
 
-    const totalDataCount = await _ds?.query({
-      // tên biến
-      // tên biến count total
+    const countTotal = await _ds?.query({
       // Query params here --------------------> Can Split to const queryParams = {structure of params} if needs
       // outFields: ["*"],
-      outFields: ["OBJECTID", "MADMA", "TENDMA"], // commons => Constant
+      outFields: dmaQueryAtribute,
       where: "OBJECTID is not null",
       returnGeometry: true,
-      page: 2, // state
-      pageSize: 5,
+      page: page,
+      pageSize: pageSize,
     });
 
-    const list = totalDataCount.records.map((element) => ({
+    const records = countTotal.records.map((element) => ({
       data: element.getData(),
     }));
 
-    setQueryDMA(totalDataCount);
-
-    setDMAQuery(list);
+    setDataDMA(countTotal);
   };
 
   //  Function get Datasource from index
@@ -133,77 +140,102 @@ const Widget = (props: AllWidgetProps<any>) => {
   }
 
   const handleSearchOnMap = async (rowData) => {
+    /**
+     * Mô tả hàm zoom:
+     * Hàm này sẽ nhận một <row data> từ bảng có dữ liệu dma trước đó
+     * 1. Get data source của DMA
+     * 2. Tìm dữ liệu geometry của DMA bằng mã DMA
+     * 3. GetGeometry as IPolygon (type)
+     * 4. Lấy JMapView từ widgetId và viewManager
+     * 5. Merge Geometries thành một <shape>
+     * 6. Sau khi có shape, sử dụng hàm jmapview.goto(target: shape)
+     */
+
     // The record for zoom, this needs info about OBJECTID and MADMA
-    const ds = getDataSourceForIndex(0); // Get first datasource (DMA)
+    const ds = getDataSourceForIndex(1); // Get first datasource (DMA)
 
     if (!ds) {
-      alert("khong lay dc du lieu"); // Tích hợp thư viện notify
+      const notify = () => toast.error("Can not get Datasource");
+      notify();
       return;
     }
+    if (dataDMA) {
+      const geometryDMA = dataDMA.records.find(
+        (i: any) =>
+          Object.fromEntries(Object.entries(i?.feature?.attributes))?.MADMA ==
+          rowData?.MADMA
+      );
 
-    const geometryDMA = queryDMA.records.find(
-      (i: any) =>
-        Object.fromEntries(Object.entries(i?.feature?.attributes))?.MADMA ==
-        rowData?.MADMA
-    );
+      const geometry = geometryDMA.getGeometry() as IPolygon;
 
-    const geometry = geometryDMA.getGeometry() as IPolygon;
+      const jMapView = await getJimuMapView(mapWidgetId, _viewManager); // Declare jMapView
+      // console.log(jMapView);
+      const { geometries } = await projectPointGeometryPolygon(
+        ProjectGeocodeURL,
+        geometry?.spatialReference, // Input Spacial
+        jMapView?.view?.spatialReference, // Expected Spacial
+        geometry?.rings // Point to create the Geometry
+      );
 
-    const jMapView = await getJimuMapView(mapWidgetId, _viewManager); // Declare jMapView & what is mapWidgetId ??
-    // console.log(jMapView);
-    const { geometries } = await projectPointGeometryPolygon(
-      ProjectGeocodeURL,
-      geometry?.spatialReference, // Input Spacial
-      jMapView?.view?.spatialReference, // Expected Spacial
-      geometry?.rings // Point to create the Geometry
-    );
+      if (!geometries) {
+        return;
+      }
 
-    if (!geometries) {
-      return;
+      /**
+       * Merge Geometries to one shape
+       */
+      const mergedGeometry = mergeGeometry(
+        geometries?.map((geo) => ({
+          type: "point",
+          ...geo,
+          spatialReference: jMapView.view.spatialReference,
+        }))
+      );
+
+      if (!mergedGeometry) {
+        return;
+      }
+
+      if (highlightHandler.current) {
+        highlightHandler.current?.remove();
+      }
+
+      const layerView =
+        jMapView.jimuLayerViews[
+          mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId
+        ];
+      console.log(layerView);
+      // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
+
+      highlightHandler.current = (
+        layerView as JimuSceneLayerView
+      ).view.highlight(rowData.OBJECTID);
+
+      console.log(rowData.OBJECTID);
+      // Zoom
+      await jMapView.view.goTo({ target: mergedGeometry } ?? {}, {
+        // The address where map should zoom
+        animate: true,
+        duration: animationDurationTime,
+      });
     }
-
-    /**
-     * Merge Geometries to one shape
-     */
-    const mergedGeometry = mergeGeometry(
-      geometries?.map((geo) => ({
-        type: "point",
-        ...geo,
-        spatialReference: jMapView.view.spatialReference,
-      }))
-    );
-
-    if (!mergedGeometry) {
-      return;
-    }
-
-    // if (highlightHandler.current) {
-    //   highlightHandler.current?.remove();
-    // }
-
-    // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
-
-    // const layterView =
-    //   jMapView.jimuLayerViews[
-    //     mapWidgetId + "-" + props.useDataSources?.[0]?.dataSourceId
-    //   ];
-
-    // highlightHandler.current = (
-    //   layterView as JimuSceneLayerView
-    // ).view.highlight(rowData.OBJECTID);
-
-    // console.log(highlightHandler);
-    // console.log(mergeGeometry);
-
-    // Zoom
-    await jMapView.view.goTo({ target: mergedGeometry } ?? {}, {
-      animate: true,
-      duration: 1000,
-    });
   };
 
   return (
     <>
+      <ToastContainer
+        position='top-right'
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme='light'
+      />
+      <ToastContainer />
       {props.useDataSources?.map((useDataSource, index) => (
         <DataSourceComponent
           key={`data-source-${index}`}
@@ -212,7 +244,16 @@ const Widget = (props: AllWidgetProps<any>) => {
         />
       ))}
       {/* {console.log(DMAQuery)} */}
-      <DMA_Table data={DMAQuery} onClickrow={handleSearchOnMap} />
+      <DMA_Table
+        data={
+          dataDMA?.records
+            ? dataDMA.records.map((element) => ({
+                data: element.getData(),
+              }))
+            : []
+        }
+        onClickrow={handleSearchOnMap}
+      />
     </>
   );
 };
