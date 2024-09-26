@@ -1,16 +1,28 @@
 import {
   AllWidgetProps,
+  appActions,
+  DataRecord,
   DataSource,
   DataSourceManager,
   IMState,
   React,
 } from "jimu-core";
 import { useSelector } from "react-redux";
-import { Box, Tabs, Tab } from "@mui/material";
+import {
+  Box,
+  Tabs,
+  Tab,
+} from "../../../../node_plugin/node_modules/@mui/material";
 import { FeatureLayerDataSource, MapViewManager } from "jimu-arcgis";
-import DHKH_Table from "../components/dhkh-table";
-import ThuyDai_Table from "../components/thuy-dai-table";
-import { eDMA } from "../../../view-data-map/src/extensions/my-store";
+import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
+import { getJimuMapView } from "../../../common/fucntion-map";
+import { mapWidgetId, queryAll } from "../../../common/constant";
+import useZoomPoint from "../../../tab-table-view/hooks/useZoomPoint";
+import { dhkhPointSymbol, thuydaiPointSymbol } from "../../../common/symbols";
+import TabTable from "../components/tab-table";
+import useAddLayer from "../../../tab-table-view/hooks/useAddLayer";
+import useHighLightLayer from "../../../tab-table-view/hooks/useHighLightLayer";
+import { useDispatch } from "react-redux";
 
 const useState = React.useState;
 const useRef = React.useRef;
@@ -18,18 +30,18 @@ const useEffect = React.useEffect;
 
 // Widget ---------------->
 const Widget = (props: AllWidgetProps<any>) => {
+  const [tabValue, setTabValue] = useState("dhkh");
+
+  const dispatch = useDispatch();
   // Create 2 ref contain data source
   let dhkhRef = useRef<DataSource>(null);
   let thuyDaiRef = useRef<DataSource>(null);
-
-  const [tabValue, setTabValue] = useState("dhkh");
-
   // Create 2 state contain data from query
   const [dhkhQuery, setDHKHQuery] = useState([]);
   const [thuyDaiQuery, setThuyDaiQuery] = useState([]);
   const [headerHDKH, setHeaderHDKH] = useState([]);
   const [headerThuyDai, setHeaderThuyDai] = useState([]);
-
+  const [jMapView, setjMapView] = useState(null);
   // Get the data from datasource
   //1. Get token
   const appToken = useSelector((state: IMState) => state.token);
@@ -37,6 +49,9 @@ const Widget = (props: AllWidgetProps<any>) => {
   const [isDataSourcesReady, setIsDataSourceReady] = useState(false);
   //3. Access the map
   const { current: _viewManager } = useRef(MapViewManager.getInstance());
+  // Use hooks
+  const { addPoint, removeAllPoint } = useAddLayer(jMapView);
+  const { zoomToPoint } = useZoomPoint(jMapView);
 
   let timeout = null as any;
 
@@ -47,6 +62,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 
     //Get datasources
     getDs();
+
     return () => {
       clearTimeout(timeout);
     };
@@ -54,15 +70,23 @@ const Widget = (props: AllWidgetProps<any>) => {
 
   // Get data from query function
   useEffect(() => {
-    // Use function get DHKH
-    if (dhkhRef.current) {
-      getDHKHData();
+    if (isDataSourcesReady) {
+      // Use function get DHKH
+      if (dhkhRef.current) {
+        getDHKHData();
+      }
+      // Usse function get ThuyDai
+      if (thuyDaiRef.current) {
+        getThuyDaiData();
+      }
+
+      getJMapview();
     }
-    // Usse function get ThuyDai
-    if (thuyDaiRef.current) {
-      getThuyDaiData();
-    }
-  }, [isDataSourcesReady]);
+  }, [isDataSourcesReady, jMapView]);
+
+  const getJMapview = async () => {
+    setjMapView(await getJimuMapView(mapWidgetId, _viewManager));
+  };
 
   // Function get datasources from props
   const getDs = async () => {
@@ -81,6 +105,7 @@ const Widget = (props: AllWidgetProps<any>) => {
       dhkhRef.current = dsArr[0];
       thuyDaiRef.current = dsArr[1];
 
+      // Get list header for table
       const fieldsHDKH = (await dhkhRef.current.fetchSchema()).fields;
       const fieldsThuyDai = (await thuyDaiRef.current.fetchSchema()).fields;
 
@@ -104,34 +129,31 @@ const Widget = (props: AllWidgetProps<any>) => {
 
   //Function query Dong Ho Khach Hang data from datasource (ref)
   const getDHKHData = async () => {
-    const query = {
-      outfields: ["*"],
-      where: "OBJECTID is not null",
-      returnGeometry: true,
-      // pageSize: 5,
-    };
-    const featureLayer = dhkhRef.current as FeatureLayerDataSource;
-    const dataQuery = await featureLayer?.query(query);
+    if (isDataSourcesReady) {
+      const query = {
+        outfields: ["*"],
+        where: "OBJECTID is not null",
+        returnGeometry: true,
+      };
+      const featureLayer = dhkhRef.current as FeatureLayerDataSource;
+      const dataQuery = await featureLayer?.query(query);
 
-    dataQuery.records.forEach((element) => {
-      setDHKHQuery((prevDHKHQuery) => [...prevDHKHQuery, element.getData()]);
-    });
+      dataQuery.records.forEach((element) => {
+        setDHKHQuery((prevDHKHQuery) => [...prevDHKHQuery, element.getData()]);
+      });
+    }
   };
 
   //Function query Thuy Dai data from datasource (ref)
   const getThuyDaiData = async () => {
-    const query = {
-      outfields: ["*"],
-      where: "OBJECTID is not null",
-      returnGeometry: true,
-      // pageSize: 5,
-    };
+    console.log(jMapView);
     const featureLayer = thuyDaiRef.current as FeatureLayerDataSource;
-    const dataQuery = await featureLayer?.query(query);
-    dataQuery.records.forEach((element) => {
-      setThuyDaiQuery((prefThuyDaiQuery) => [
-        ...prefThuyDaiQuery,
-        element.getData(),
+    const dataQuery = await featureLayer?.query(queryAll);
+
+    dataQuery.records.forEach((record) => {
+      setThuyDaiQuery((prevThuyDaiQuery) => [
+        ...prevThuyDaiQuery,
+        record.getData(),
       ]);
     });
   };
@@ -143,28 +165,105 @@ const Widget = (props: AllWidgetProps<any>) => {
   //   console.log(dmaRecieve);
   // }
 
-  // Handle Change Tab
-  const handleChangeTab = (event: React.SyntheticEvent, newValue: string) => {
+  const query = {
+    outfields: ["*"],
+    where: "OBJECTID is not null",
+    returnGeometry: true,
+  };
+  // Zoom to a specific feature on the map based on the selected row data
+  const handleZoomOnMap = async (rowData, featureLayerName) => {
+    let featureLayer: FeatureLayerDataSource;
+    switch (featureLayerName) {
+      case "dhkh":
+        featureLayer = dhkhRef.current as FeatureLayerDataSource;
+        break;
+      case "thuydai":
+        featureLayer = thuyDaiRef.current as FeatureLayerDataSource;
+        break;
+      default:
+        featureLayer = dhkhRef.current as FeatureLayerDataSource;
+        break;
+    }
+    const dataQuery = await featureLayer.query(query);
+
+    const record = dataQuery.records.find(
+      (r) => r.getData().OBJECTID === rowData.OBJECTID
+    );
+
+    jMapView && zoomToPoint({ record });
+  };
+
+  // Handle tab change between DHKH and Thuy Dai
+  const handleChangeTab = async (
+    event: React.SyntheticEvent,
+    newValue: string
+  ) => {
     setTabValue(newValue);
+    if (isDataSourcesReady) {
+      switch (newValue) {
+        case "dhkh":
+          removeAllPoint();
+          dispatch(
+            appActions.widgetStatePropChange(
+              "widget14",
+              "typeChartData",
+              "dhkh"
+            )
+          );
+          break;
+        case "thuydai":
+          removeAllPoint();
+          dispatch(
+            appActions.widgetStatePropChange(
+              "widget14",
+              "typeChartData",
+              "thuydai"
+            )
+          );
+          const thuydaiFeatureLayer =
+            thuyDaiRef.current as FeatureLayerDataSource;
+          await thuydaiFeatureLayer
+            ?.query(queryAll)
+            .then((data) => {
+              const records = data.records.map((r: DataRecord) => ({
+                data: r.getData(),
+                GEOMETRY: r.getGeometry(),
+              }));
+              console.log("Length of the records", records.length);
+              addPoint({ records }, thuydaiPointSymbol);
+            })
+            .catch((e) => console.log(e));
+
+          break;
+        default:
+      }
+    }
   };
 
   return (
     <>
       <Box>
-        <Tabs
-          value={tabValue}
-          onChange={handleChangeTab}
-          aria-label='secondary tabs example'>
+        <Tabs value={tabValue} onChange={handleChangeTab}>
           <Tab value='dhkh' label='Đồng Hồ Khách hàng' />
           <Tab value='thuydai' label='Thủy Đài' />
         </Tabs>
 
         <TabPanel value={tabValue} index='dhkh'>
-          <DHKH_Table data={dhkhQuery} columnHeader={headerHDKH} />
+          <TabTable
+            data={dhkhQuery}
+            columnHeader={headerHDKH}
+            onClickRow={handleZoomOnMap}
+            featureLayerName='dhkh'
+          />
         </TabPanel>
 
         <TabPanel value={tabValue} index='thuydai'>
-          <ThuyDai_Table data={thuyDaiQuery} columnHeader={headerThuyDai} />
+          <TabTable
+            data={thuyDaiQuery}
+            columnHeader={headerThuyDai}
+            featureLayerName='thuydai'
+            onClickRow={handleZoomOnMap}
+          />
         </TabPanel>
       </Box>
     </>

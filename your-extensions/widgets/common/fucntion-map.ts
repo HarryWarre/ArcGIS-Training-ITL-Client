@@ -1,22 +1,28 @@
+import { Polygon } from "@arcgis/core/geometry";
+import Geometry from "@arcgis/core/geometry/Geometry";
+import geometryEngine from "@arcgis/core/geometry/geometryEngine";
 import { JimuMapView, MapViewManager } from "jimu-arcgis";
-import { getAppStore, ImmutableObject, JimuMapViewInfo } from "jimu-core";
+import {
+  DataRecord,
+  getAppStore,
+  ImmutableObject,
+  JimuMapViewInfo,
+} from "jimu-core";
 
 export function _getActiveViewId(
-  mapWidgetId: string, // Id of widget map
-  infos: ImmutableObject<{ [getJimuMapViewId: string]: JimuMapViewInfo }> // Object contain Jimumapviews, each viewID (id of jimumapview) => JimuMapViewInfo
-): string {
-  // Get the list of viewId in infos
-  let activeViewId = Object.keys(infos || {}).find(
-    (viewId) =>
-      infos[viewId].mapWidgetId === mapWidgetId && infos[viewId].isActive
-  );
-  if (!activeViewId) {
-    // This action will find the view Id = mapWidgetId without state is Active
-    activeViewId = Object.keys(infos || {}).find(
+  mapWidgetId: string,
+  infos: ImmutableObject<{ [getJimuMapViewId: string]: JimuMapViewInfo }>
+): string | undefined {
+  return (
+    Object.keys(infos ?? {}).find(
+      (viewId) =>
+        infos[viewId].mapWidgetId === mapWidgetId &&
+        (infos[viewId].isActive ?? false)
+    ) ??
+    Object.keys(infos ?? {}).find(
       (viewId) => infos[viewId].mapWidgetId === mapWidgetId
-    );
-  }
-  return activeViewId;
+    )
+  );
 }
 
 /**

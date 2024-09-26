@@ -42,7 +42,7 @@ const DMA_Table = ({ data, onClickrow }) => {
       </IconButton>
     ),
     muiTableBodyRowProps: ({ row }) => ({
-      onClick: (event) => {
+      onClick: () => {
         const dma = { ...row.original };
         dispatch(
           appActions.widgetStatePropChange(

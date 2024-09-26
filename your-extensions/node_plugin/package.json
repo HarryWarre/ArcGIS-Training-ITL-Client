@@ -14,6 +14,7 @@
     "@mui/icons-material": "^6.0.2",
     "@mui/material": "^6.0.2",
     "@mui/x-date-pickers": "^7.16.0",
+    "highcharts": "^11.4.8",
     "lodash": "^4.17.21",
     "material-react-table": "^3.0.1",
     "react-toastify": "^10.0.5"

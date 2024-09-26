@@ -14,6 +14,7 @@ import {
 } from "jimu-arcgis";
 import {
   AllWidgetProps,
+  DataRecord,
   DataSource,
   DataSourceComponent,
   DataSourceManager,
@@ -29,14 +30,21 @@ import {
   mapWidgetId,
   ProjectGeocodeURL,
   animationDurationTime,
+  queryAll,
 } from "../../../common/constant";
 import { IPolygon } from "@esri/arcgis-rest-types";
 import {
   mergeGeometry,
   projectPointGeometryPolygon,
 } from "../../../common/function";
-import { ToastContainer, toast } from "react-toastify";
+import {
+  ToastContainer,
+  toast,
+} from "../../../../node_plugin/node_modules/react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { dhkhPointSymbol } from "../../../common/symbols";
+import useAddLayer from "../../../tab-table-view/hooks/useAddLayer";
+import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
 
 //Declear Hooks
 const useState = React.useState;
@@ -63,6 +71,9 @@ const Widget = (props: AllWidgetProps<any>) => {
   // Default setting query param
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(5);
+  const [jMapView, setjMapView] = useState(null);
+
+  const { spatialQuery } = useSpatialQuery(jMapView);
 
   let timeout = null as any;
 
@@ -86,7 +97,13 @@ const Widget = (props: AllWidgetProps<any>) => {
     if (DMARef.current) {
       getDMAData(DMARef.current);
     }
+
+    getJMapview();
   }, [isDataSourcesReady]);
+
+  const getJMapview = async () => {
+    setjMapView(await getJimuMapView(mapWidgetId, _viewManager));
+  };
 
   async function getDs() {
     const dsArr: DataSource[] = [];
@@ -111,22 +128,19 @@ const Widget = (props: AllWidgetProps<any>) => {
 
   const getDMAData = async (ds: DataSource) => {
     const _ds = ds as FeatureLayerDataSource;
+    if (_ds) {
+      const countTotal = await _ds.query({
+        // Query params here --------------------> Can Split to const queryParams = {structure of params} if needs
+        // outFields: ["*"],
+        outFields: dmaQueryAtribute,
+        where: "OBJECTID is not null",
+        returnGeometry: true,
+        page: page,
+        pageSize: pageSize,
+      });
 
-    const countTotal = await _ds?.query({
-      // Query params here --------------------> Can Split to const queryParams = {structure of params} if needs
-      // outFields: ["*"],
-      outFields: dmaQueryAtribute,
-      where: "OBJECTID is not null",
-      returnGeometry: true,
-      page: page,
-      pageSize: pageSize,
-    });
-
-    const records = countTotal.records.map((element) => ({
-      data: element.getData(),
-    }));
-
-    setDataDMA(countTotal);
+      setDataDMA(countTotal);
+    }
   };
 
   //  Function get Datasource from index
@@ -165,6 +179,8 @@ const Widget = (props: AllWidgetProps<any>) => {
           Object.fromEntries(Object.entries(i?.feature?.attributes))?.MADMA ==
           rowData?.MADMA
       );
+      const record = geometryDMA as DataRecord;
+      // console.log(record.getGeometry());
 
       const geometry = geometryDMA.getGeometry() as IPolygon;
 
@@ -202,22 +218,30 @@ const Widget = (props: AllWidgetProps<any>) => {
 
       const layerView =
         jMapView.jimuLayerViews[
-          mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId
+          mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId // Select Datasource of DMA ***
         ];
-      console.log(layerView);
+      // console.log(layerView);
       // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
 
       highlightHandler.current = (
         layerView as JimuSceneLayerView
       ).view.highlight(rowData.OBJECTID);
 
-      console.log(rowData.OBJECTID);
+      // console.log(rowData.OBJECTID);
       // Zoom
       await jMapView.view.goTo({ target: mergedGeometry } ?? {}, {
         // The address where map should zoom
         animate: true,
         duration: animationDurationTime,
       });
+
+      spatialQuery(
+        {
+          record: geometryDMA as DataRecord,
+          datasource: DHKHRef.current as FeatureLayerDataSource,
+        },
+        dhkhPointSymbol
+      );
     }
   };
 

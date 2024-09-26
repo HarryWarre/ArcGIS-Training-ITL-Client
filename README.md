@@ -1,2 +1,2 @@
 # ArcGIS-Training-ITL
-Experience Builder ArcGIS training project - Inteli
+Experience Builder ArcGIS training project - Intelli

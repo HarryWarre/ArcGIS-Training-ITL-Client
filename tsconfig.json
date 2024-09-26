@@ -2,19 +2,14 @@
   "compileOnSave": false,
   "buildOnSave": false,
   "compilerOptions": {
+    "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "module": "esnext",
     "moduleResolution": "node",
     "target": "es6",
     "skipLibCheck": true,
-    "lib": [
-      "dom",
-      "es6",
-      "scripthost",
-      "es2015",
-      "es2020.Promise"
-    ],
+    "lib": ["dom", "es6", "scripthost", "es2015", "es2020.Promise"],
     "jsx": "react",
     "noEmitHelpers": false,
     "noUnusedLocals": false,
@@ -34,9 +29,5 @@
     "types",
     "jimu-core/lib/types"
   ],
-  "exclude": [
-    "node_modules",
-    "arcgis-js-api",
-    "**/*.js"
-  ]
+  "exclude": ["node_modules", "arcgis-js-api", "**/*.js"]
 }

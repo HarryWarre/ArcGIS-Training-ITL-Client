@@ -2,10 +2,10 @@ import { useMemo } from "react";
 import {
   MaterialReactTable,
   useMaterialReactTable,
-} from "../../../../node_plugin/node_modules/material-react-table";
+} from "../../../../node_plugin/node_modules/material-react-table/dist";
 import React from "react";
 
-const ThuyDai_Table = ({ data, columnHeader }) => {
+const TabTable = ({ data, columnHeader, onClickRow = null, featureLayerName='' }) => {
   const isLoading = !data || data.length === 0;
   const columns = useMemo(() => {
     if (columnHeader.length > 0) {
@@ -21,9 +21,18 @@ const ThuyDai_Table = ({ data, columnHeader }) => {
 
   const table = useMaterialReactTable({
     columns,
-    data,
+    data: data,
     paginationDisplayMode: "pages",
-    state: { isLoading: isLoading },
+    state: { isLoading: isLoading }, // Loading
+    enableColumnPinning: true,
+    muiTableBodyRowProps: ({ row }) => ({
+      onClick: () => {
+        if (onClickRow) {
+          onClickRow(row.original, featureLayerName);
+        }
+      },
+    }),
+
     initialState: {
       pagination: {
         pageSize: 5,
@@ -44,4 +53,4 @@ const ThuyDai_Table = ({ data, columnHeader }) => {
   return <MaterialReactTable table={table} />;
 };
 
-export default ThuyDai_Table;
+export default TabTable;

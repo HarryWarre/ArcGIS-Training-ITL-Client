@@ -45,3 +45,4 @@ export const mergeGeometry = (geometryArr: any[]) => {
   result = geometryEngine.union(geometryArr);
   return result;
 };
+

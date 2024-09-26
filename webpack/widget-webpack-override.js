@@ -34,6 +34,10 @@ module.exports = function (webpackConfig) {
       __dirname,
       "../your-extensions/node_plugin/node_modules/react-toastify"
     ),
+    highchart: path.resolve(
+      __dirname,
+      "../your-extensions/node_plugin/node_modules/highcharts"
+    ),
     components: path.resolve(__dirname, "../your-extensons/widgets/common/"),
   });
 
