@@ -1,1 +1,6 @@
-{}
+{
+  "collumnSetting": {
+    "DHKH": ["OBJECTID", "TINHTRANG", "CODONGHO", "SOHOSO", "DONVICAPNHAT"],
+    "THUYDAI": ["OBJECTID", "TINHTRANG", "DONVICAPNHAT"]
+  }
+}

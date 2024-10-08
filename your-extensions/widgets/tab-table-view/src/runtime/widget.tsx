@@ -4,6 +4,7 @@ import {
   DataRecord,
   DataSource,
   DataSourceManager,
+  FeatureLayerQueryParams,
   IMState,
   React,
 } from "jimu-core";
@@ -16,13 +17,18 @@ import {
 import { FeatureLayerDataSource, MapViewManager } from "jimu-arcgis";
 import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
 import { getJimuMapView } from "../../../common/fucntion-map";
-import { mapWidgetId, queryAll } from "../../../common/constant";
+import {
+  mapWidgetId,
+  prioritizedFieldsDHKH,
+  prioritizedFieldsThuyDai,
+  queryAll,
+} from "../../../common/constant";
 import useZoomPoint from "../../../tab-table-view/hooks/useZoomPoint";
-import { dhkhPointSymbol, thuydaiPointSymbol } from "../../../common/symbols";
+import { thuydaiPointSymbol } from "../../../common/symbols";
 import TabTable from "../components/tab-table";
 import useAddLayer from "../../../tab-table-view/hooks/useAddLayer";
-import useHighLightLayer from "../../../tab-table-view/hooks/useHighLightLayer";
 import { useDispatch } from "react-redux";
+import { eDMA } from "../../../view-data-map/src/extensions/my-store";
 
 const useState = React.useState;
 const useRef = React.useRef;
@@ -30,8 +36,15 @@ const useEffect = React.useEffect;
 
 // Widget ---------------->
 const Widget = (props: AllWidgetProps<any>) => {
-  const [tabValue, setTabValue] = useState("dhkh");
+  const dhkhReceive = useSelector(
+    (state: IMState) => state.widgetsState?.[`${eDMA.storeKey}`]?.DMAContext
+  );
 
+  const thuyDaiReceive = useSelector(
+    (state: IMState) => state.widgetsState?.[`${eDMA.storeKey}`]?.ThuyDaiContext
+  );
+
+  const [tabValue, setTabValue] = useState("dhkh");
   const dispatch = useDispatch();
   // Create 2 ref contain data source
   let dhkhRef = useRef<DataSource>(null);
@@ -42,6 +55,11 @@ const Widget = (props: AllWidgetProps<any>) => {
   const [headerHDKH, setHeaderHDKH] = useState([]);
   const [headerThuyDai, setHeaderThuyDai] = useState([]);
   const [jMapView, setjMapView] = useState(null);
+  const [mapingFieldsDHKH, setmapingFieldsDHKH] = useState(null);
+  const [mapingFieldsThuyDai, setmapingFieldsThuyDai] = useState(null);
+  const [codeFieldsDHKH, setCodeFieldsDHKH] = useState(null);
+  const [codeFieldsThuyDai, setCodeFieldsThuyDai] = useState(null);
+
   // Get the data from datasource
   //1. Get token
   const appToken = useSelector((state: IMState) => state.token);
@@ -84,6 +102,41 @@ const Widget = (props: AllWidgetProps<any>) => {
     }
   }, [isDataSourcesReady, jMapView]);
 
+  useEffect(() => {
+    if (mapingFieldsDHKH) {
+      if (mapingFieldsDHKH.length > 0) {
+        // Lọc những field có giá trị trong codevalues
+        const validFields = mapingFieldsDHKH.filter(
+          (field) => field?.domain?.codedValues
+        );
+
+        // Lưu các field hợp lệ vào state
+        setCodeFieldsDHKH(validFields);
+      }
+    }
+
+    if (mapingFieldsThuyDai) {
+      if (mapingFieldsThuyDai.length > 0) {
+        // Lọc những field có giá trị trong codevalues
+        const validFields = mapingFieldsThuyDai.filter(
+          (field) => field?.domain?.codedValues
+        );
+
+        // Lưu các field hợp lệ vào state
+        setCodeFieldsThuyDai(validFields);
+      }
+    }
+  }, [mapingFieldsDHKH, mapingFieldsThuyDai]);
+
+  useEffect(() => {
+    if (codeFieldsDHKH) {
+      console.log(codeFieldsDHKH[0]);
+    }
+    if (codeFieldsThuyDai) {
+      console.log(codeFieldsThuyDai[0]);
+    }
+  }, [codeFieldsDHKH, codeFieldsThuyDai]);
+
   const getJMapview = async () => {
     setjMapView(await getJimuMapView(mapWidgetId, _viewManager));
   };
@@ -120,7 +173,8 @@ const Widget = (props: AllWidgetProps<any>) => {
 
       setHeaderHDKH(aliasDHKHArray);
       setHeaderThuyDai(aliasThuyDaiArray);
-
+      setmapingFieldsDHKH(dsArr[1]["layerDefinition"]["fields"]);
+      setmapingFieldsThuyDai(dsArr[0]["layerDefinition"]["fields"]);
       clearTimeout(timeout);
     } else {
       setTimeout(() => getDs(), 300);
@@ -130,14 +184,14 @@ const Widget = (props: AllWidgetProps<any>) => {
   //Function query Dong Ho Khach Hang data from datasource (ref)
   const getDHKHData = async () => {
     if (isDataSourcesReady) {
-      const query = {
-        outfields: ["*"],
-        where: "OBJECTID is not null",
+      const featureLayer = dhkhRef.current as FeatureLayerDataSource;
+      const queryParams: FeatureLayerQueryParams = {
+        where: "",
+        outFields: ["*"],
         returnGeometry: true,
       };
-      const featureLayer = dhkhRef.current as FeatureLayerDataSource;
-      const dataQuery = await featureLayer?.query(query);
 
+      const dataQuery = await featureLayer?.query(queryParams);
       dataQuery.records.forEach((element) => {
         setDHKHQuery((prevDHKHQuery) => [...prevDHKHQuery, element.getData()]);
       });
@@ -146,7 +200,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 
   //Function query Thuy Dai data from datasource (ref)
   const getThuyDaiData = async () => {
-    console.log(jMapView);
+    // console.log(jMapView);
     const featureLayer = thuyDaiRef.current as FeatureLayerDataSource;
     const dataQuery = await featureLayer?.query(queryAll);
 
@@ -158,18 +212,6 @@ const Widget = (props: AllWidgetProps<any>) => {
     });
   };
 
-  // const dmaRecieve = useSelector(
-  //   (state: IMState) => state.widgetsState?.[`${eDMA.storeKey}`]?.DMAContext // WidgetID.propkey (from table in view-data-map)
-  // );
-  // if (dmaRecieve !== undefined) {
-  //   console.log(dmaRecieve);
-  // }
-
-  const query = {
-    outfields: ["*"],
-    where: "OBJECTID is not null",
-    returnGeometry: true,
-  };
   // Zoom to a specific feature on the map based on the selected row data
   const handleZoomOnMap = async (rowData, featureLayerName) => {
     let featureLayer: FeatureLayerDataSource;
@@ -184,7 +226,7 @@ const Widget = (props: AllWidgetProps<any>) => {
         featureLayer = dhkhRef.current as FeatureLayerDataSource;
         break;
     }
-    const dataQuery = await featureLayer.query(query);
+    const dataQuery = await featureLayer.query(queryAll);
 
     const record = dataQuery.records.find(
       (r) => r.getData().OBJECTID === rowData.OBJECTID
@@ -229,7 +271,7 @@ const Widget = (props: AllWidgetProps<any>) => {
                 data: r.getData(),
                 GEOMETRY: r.getGeometry(),
               }));
-              console.log("Length of the records", records.length);
+              // console.log("Length of the records", records.length);
               addPoint({ records }, thuydaiPointSymbol);
             })
             .catch((e) => console.log(e));
@@ -250,19 +292,23 @@ const Widget = (props: AllWidgetProps<any>) => {
 
         <TabPanel value={tabValue} index='dhkh'>
           <TabTable
-            data={dhkhQuery}
+            data={dhkhReceive ? dhkhReceive : dhkhQuery}
             columnHeader={headerHDKH}
             onClickRow={handleZoomOnMap}
             featureLayerName='dhkh'
+            prioritizedFields={prioritizedFieldsDHKH}
+            fields={codeFieldsDHKH}
           />
         </TabPanel>
 
         <TabPanel value={tabValue} index='thuydai'>
           <TabTable
-            data={thuyDaiQuery}
+            data={thuyDaiReceive ? thuyDaiReceive : thuyDaiQuery}
             columnHeader={headerThuyDai}
             featureLayerName='thuydai'
             onClickRow={handleZoomOnMap}
+            prioritizedFields={prioritizedFieldsThuyDai}
+            fields={codeFieldsThuyDai}
           />
         </TabPanel>
       </Box>

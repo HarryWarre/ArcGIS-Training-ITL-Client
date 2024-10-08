@@ -26,7 +26,6 @@ const useSpatialQuery = (jimuMapView: JimuMapView) => {
       returnGeometry: true,
       geometry: record.getGeometry(),
     };
-
     datasource
       ?.query(queryParams)
       .then((data) => {

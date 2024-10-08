@@ -27,6 +27,9 @@ export default function ({ title, description, data }) {
         },
       },
       yAxis: {
+        title: {
+          text: "Số lượng",
+        },
         min: 0,
         // title: {
         //   text: "1000 metric tons (MT)", // Config this

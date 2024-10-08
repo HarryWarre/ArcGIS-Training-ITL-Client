@@ -34,8 +34,9 @@ const ChartComponent = ({ title, description, data }) => {
   };
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end" }}>
+    <Grid container spacing={2} sx={{ pl: 1 }}>
+      {/* <Grid item xs={12} sx={{ display: "flex", justifyContent: "flex-end" }}> */}
+      <Grid item xs={12}>
         {/* Điều khiển lựa chọn chart */}
         {Object.keys(ChartType).map((r) => (
           <FormControlLabel

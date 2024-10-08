@@ -3,6 +3,7 @@ import Highcharts from "highcharts";
 const { useEffect } = React;
 export default function ({ title, description, data }) {
   useEffect(() => {
+    console.log(data);
     const categories = Object.keys(data);
     const values = Object.values(data);
     //  We will configure the collumn chart at this option
@@ -39,7 +40,7 @@ export default function ({ title, description, data }) {
       },
       yAxis: {
         title: {
-          text: "Temperature",
+          text: "Số lượng",
         },
         labels: {
           format: "{value}°",

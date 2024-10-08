@@ -14,14 +14,16 @@ import {
 } from "jimu-arcgis";
 import {
   AllWidgetProps,
+  appActions,
   DataRecord,
   DataSource,
   DataSourceComponent,
   DataSourceManager,
+  FeatureLayerQueryParams,
   IMState,
   React,
 } from "jimu-core";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import DMA_Table from "../components/table";
 import { getJimuMapView } from "../../../common/fucntion-map";
 import {
@@ -30,7 +32,6 @@ import {
   mapWidgetId,
   ProjectGeocodeURL,
   animationDurationTime,
-  queryAll,
 } from "../../../common/constant";
 import { IPolygon } from "@esri/arcgis-rest-types";
 import {
@@ -42,9 +43,11 @@ import {
   toast,
 } from "../../../../node_plugin/node_modules/react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { dhkhPointSymbol } from "../../../common/symbols";
-import useAddLayer from "../../../tab-table-view/hooks/useAddLayer";
+import { eDMA } from "../extensions/my-store";
+
 import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
+import useHighLightLayer from "../../../tab-table-view/hooks/useHighLightLayer";
+import { dhkhPointSymbol } from "../../../common/symbols";
 
 //Declear Hooks
 const useState = React.useState;
@@ -53,6 +56,7 @@ const useRef = React.useRef;
 
 // Widget start here  --------------->
 const Widget = (props: AllWidgetProps<any>) => {
+  const dispatch = useDispatch();
   //Get app token
   const appToken = useSelector((state: IMState) => state.token);
 
@@ -70,10 +74,11 @@ const Widget = (props: AllWidgetProps<any>) => {
   const [dataDMA, setDataDMA] = useState(null); // ?
   // Default setting query param
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(5);
+  const [pageSize, setPageSize] = useState(6);
   const [jMapView, setjMapView] = useState(null);
 
   const { spatialQuery } = useSpatialQuery(jMapView);
+  const { hightLightShape, removeHighlightShape } = useHighLightLayer(jMapView);
 
   let timeout = null as any;
 
@@ -179,7 +184,7 @@ const Widget = (props: AllWidgetProps<any>) => {
           Object.fromEntries(Object.entries(i?.feature?.attributes))?.MADMA ==
           rowData?.MADMA
       );
-      const record = geometryDMA as DataRecord;
+      // const record = geometryDMA as DataRecord;
       // console.log(record.getGeometry());
 
       const geometry = geometryDMA.getGeometry() as IPolygon;
@@ -215,7 +220,6 @@ const Widget = (props: AllWidgetProps<any>) => {
       if (highlightHandler.current) {
         highlightHandler.current?.remove();
       }
-
       const layerView =
         jMapView.jimuLayerViews[
           mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId // Select Datasource of DMA ***
@@ -242,6 +246,108 @@ const Widget = (props: AllWidgetProps<any>) => {
         },
         dhkhPointSymbol
       );
+    }
+  };
+
+  const queryWhenDMASelected = async (objectId) => {
+    const flDHKH = DHKHRef.current as FeatureLayerDataSource;
+    const fdDMA = DMARef.current as FeatureLayerDataSource;
+    const flThuyDai = ThuyDaiRef.current as FeatureLayerDataSource;
+
+    if (fdDMA) {
+      getGeometryDMA(objectId)
+        .then(async (record) => {
+          if (!record) {
+            throw new Error("Geometry not found");
+          }
+
+          // Query DHKH with geometry from DMA
+          const geometrySortParams: FeatureLayerQueryParams = {
+            where: "",
+            outFields: ["*"],
+            returnGeometry: true,
+            geometry: record.getGeometry(),
+          };
+
+          try {
+            const dhkhData = await flDHKH?.query(geometrySortParams);
+            const thuyDaiData = await flThuyDai?.query(geometrySortParams);
+
+            if (dhkhData && thuyDaiData) {
+              // console.log("DHKhData: ", dhkhData); // Log kết quả trước khi dispatch
+
+              dispatch(
+                appActions.widgetStatePropChange(
+                  eDMA.storeKey, // Widget ID
+                  eDMA.sectionKey,
+                  dhkhData.records.map((record) => record.getData())
+                )
+              );
+
+              dispatch(
+                appActions.widgetStatePropChange(
+                  eDMA.storeKey, // Widget ID
+                  eDMA.sectionKeyThuyDai,
+                  thuyDaiData.records.map((record) => record.getData())
+                )
+              );
+            }
+          } catch (error) {
+            console.error("Error querying DHKH:", error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error querying DMA:", error);
+        });
+    }
+  };
+
+  const getGeometryDMA = async (objectId: any): Promise<DataRecord | null> => {
+    const fdDMA = DMARef.current as FeatureLayerDataSource;
+
+    if (fdDMA) {
+      try {
+        const dmaSelected = await fdDMA.query({
+          outFields: ["*"],
+          where: `OBJECTID = ${objectId}`,
+          returnGeometry: true,
+        });
+
+        return dmaSelected.records[0];
+      } catch (error) {
+        console.error("Error querying DMA:", error);
+      }
+    }
+    return null; //
+  };
+
+  const hightlightDMAs = async (listDMAs) => {
+    // console.log(listDMAs);
+    /**
+     * Dựa vào list DMA, highlight từng DMA
+     */
+
+    // Lấy JimuMapView từ MapViewManager
+    const jMapView = await getJimuMapView(mapWidgetId, _viewManager);
+
+    if (jMapView) {
+      if (highlightHandler.current) {
+        highlightHandler.current?.remove();
+        // highlightHandler.current = null;
+      }
+
+      // Lấy layerView dựa trên mapWidgetId và dataSourceId
+      const layerView =
+        jMapView.jimuLayerViews[
+          mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId
+        ];
+
+      // Kiểm tra nếu layerView tồn tại và có thuộc tính view
+      if (layerView && (layerView as JimuSceneLayerView).view) {
+        highlightHandler.current = (
+          layerView as JimuSceneLayerView
+        ).view.highlight(listDMAs);
+      }
     }
   };
 
@@ -276,6 +382,8 @@ const Widget = (props: AllWidgetProps<any>) => {
               }))
             : []
         }
+        queryDHKH={queryWhenDMASelected}
+        hightlightDMAs={hightlightDMAs}
         onClickrow={handleSearchOnMap}
       />
     </>

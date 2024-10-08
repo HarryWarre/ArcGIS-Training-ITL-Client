@@ -1,7 +1,7 @@
 import { type ImmutableObject } from 'seamless-immutable'
 
 export interface Config {
-  outfieldsSetting: string
+  exampleConfigProperty: string
 }
 
 export type IMConfig = ImmutableObject<Config>

@@ -16,15 +16,20 @@ import {
   RadioGroup,
   FormControlLabel,
   Radio,
+  TextField,
+  Autocomplete,
 } from "../../../../node_plugin/node_modules/@mui/material";
 import { useSelector } from "react-redux";
 import { MapViewManager } from "jimu-arcgis";
 import {
   propsChart_DongHoKhachHang,
   propsChart_DMA,
+  propsChart_ThuyDai,
 } from "../../../common/constant";
 import ChartComponent from "../../../components/charts";
-import { feartureDhkh, feartureDMA } from "./chart";
+import { eDMA } from "../../../view-data-map/src/extensions/my-store";
+// import { feartureDhkh, feartureDMA } from "./chart";
+
 // Hooks
 const { useEffect, useState, useRef } = React;
 
@@ -40,6 +45,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   // 2 Ref of datasource
   const dhkhRef = useRef(null);
   const dmaRef = useRef(null);
+  const thuyDaiRef = useRef(null);
 
   // Get datasource
   let timeout = null as any;
@@ -48,6 +54,41 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const [dataChart, setDataChart] = useState([]);
   const [filterDataChart, setFilterDataChart] = useState({});
 
+  // Get Config
+  const [featureDhkh, setFeatureDhkh] = useState<string[]>([]);
+  const [featureDMA, setFeatureDMA] = useState<string[]>([]);
+  const [featureThuyDai, setFeatureThuyDai] = useState<string[]>([]);
+
+  // Recieve Data from redux
+  const dhkhReceive = useSelector(
+    (state: IMState) => state.widgetsState?.[`${eDMA.storeKey}`]?.DMAContext
+  );
+
+  const thuyDaiReceive = useSelector(
+    (state: IMState) => state.widgetsState?.[`${eDMA.storeKey}`]?.ThuyDaiContext
+  );
+
+  const options = [
+    { value: "dhkh", label: "Đồng hồ khách hàng" },
+    { value: "thuydai", label: "Thủy Đài" },
+    // { value: 'dma', label: 'DMA' },
+  ];
+
+  useEffect(() => {
+    // Get value from props config
+    const config = props.config.outfieldsSetting;
+
+    if (config) {
+      // Get JSON
+      const parsedConfig =
+        typeof config === "string" ? JSON.parse(config) : config;
+
+      // Access JSON
+      setFeatureDhkh(parsedConfig.DHKH || []);
+      setFeatureDMA(parsedConfig.DMA || []);
+      setFeatureThuyDai(parsedConfig.ThuyDai || []);
+    }
+  }, [props.config.outfieldsSetting]);
   // Use effect
   // *** ***
   //Get Token
@@ -74,20 +115,28 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           case "dma":
             getdmaRecords();
             break;
+          case "thuydai":
+            getThuyDaiRecord();
+            break;
           default:
             getDHKHRecords();
             break;
         }
       }
     }
-  }, [isDataSourceReady, selectedLayer]);
+  }, [isDataSourceReady, selectedLayer, dhkhReceive, thuyDaiReceive]);
 
   useEffect(() => {
-    if (dataChart.length > 0) {
+    if (dataChart.length >= 0) {
       if (selectedLayer === "dhkh") filterDHKH();
       else if (selectedLayer === "dma") filterDMA();
+      else if (selectedLayer === "thuydai") filterThuyDai();
     }
   }, [dataChart]);
+
+  // useEffect(() => {
+  //   console.log(filterDataChart);
+  // }, [filterDataChart]);
 
   // Get type data from redux and set the props chart for each chart
   useEffect(() => {
@@ -98,6 +147,9 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           break;
         case "dma":
           setPropsChart(propsChart_DMA);
+          break;
+        case "thuydai":
+          setPropsChart(propsChart_ThuyDai);
           break;
         default:
           setPropsChart(propsChart_DongHoKhachHang); // Default
@@ -120,9 +172,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     if (dsArr.every((e) => e)) {
       setIsDataSourceReady(true);
 
-      // Save 2 ref with datasource
+      // Save 3 ref with datasource
       dhkhRef.current = dsArr[0];
       dmaRef.current = dsArr[1];
+      thuyDaiRef.current = dsArr[2];
 
       clearTimeout(timeout);
     } else {
@@ -143,13 +196,25 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     return (await datasource?.query(defaultQuery)).records;
   };
 
-  // Use simple query to get [records] of 2 type data
+  // Use simple query to get [records] of 3 type data
   const getDHKHRecords = async () => {
     const records = getRecords(
       dhkhRef.current as FeatureLayerDataSource,
-      feartureDhkh
+      featureDhkh
     );
     // setDataChart([]);
+    const newData = [];
+    (await records).forEach((record) => {
+      newData.push(record.getData());
+    });
+    dhkhReceive ? setDataChart(dhkhReceive) : setDataChart(newData);
+  };
+
+  const getdmaRecords = async () => {
+    const records = getRecords(
+      dmaRef.current as FeatureLayerDataSource,
+      featureDMA
+    );
     const newData = [];
     (await records).forEach((record) => {
       newData.push(record.getData());
@@ -157,16 +222,13 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     setDataChart(newData);
   };
 
-  const getdmaRecords = async () => {
-    const records = getRecords(
-      dmaRef.current as FeatureLayerDataSource,
-      feartureDMA
-    );
+  const getThuyDaiRecord = async () => {
+    const records = getRecords(thuyDaiRef.current as FeatureLayerDataSource);
     const newData = [];
     (await records).forEach((record) => {
       newData.push(record.getData());
     });
-    setDataChart(newData);
+    thuyDaiReceive ? setDataChart(thuyDaiReceive) : setDataChart(newData);
   };
 
   // Filter data section
@@ -177,7 +239,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     if (dataChart && dataChart.length > 0) {
       const result = {}; // Object to store the count of each 'Cỡ đồng hồ'
       dataChart.forEach((element) => {
-        const coDongHo = element[feartureDhkh[0]]; // Get Value
+        const coDongHo = element[featureDhkh[0]]; // Get Value
 
         if (result[coDongHo]) {
           result[coDongHo] += 1; // Increase when exists
@@ -192,9 +254,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const filterDMA = () => {
     if (dataChart && dataChart.length > 0) {
       const filter = dataChart.reduce((acc, record) => {
-        const districtName = String(record[feartureDMA[0]])
-          .split("-")[0]
-          .trim(); // Get district's name
+        const districtName = String(record[featureDMA[0]]).split("-")[0].trim(); // Get district's name
         if (acc[districtName]) {
           acc[districtName] += 1; // If the name exists, increment its count
         } else {
@@ -206,19 +266,39 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     }
   };
 
-  const handleLayerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSelectedLayer(event.target.value); // cập nhật state khi giá trị thay đổi
+  // thuydaifilter
+  const filterThuyDai = () => {
+    if (dataChart && dataChart.length > 0) {
+      const result = {}; // Object to store the count of each 'Cỡ đồng hồ'
+      dataChart.forEach((element) => {
+        const tinhtrang = element[featureThuyDai[0]]; // Get Value
+
+        if (result[tinhtrang]) {
+          result[tinhtrang] += 1; // Increase when exists
+        } else {
+          result[tinhtrang] = 1; // Create new if not exist with default count
+        }
+      });
+      setFilterDataChart(result);
+    } else {
+      console.log("Test");
+      setFilterDataChart({});
+    }
+  };
+
+  const handleLayerChange = (event, newValue) => {
+    setSelectedLayer(newValue ? newValue.value : "dhkh");
   };
 
   return (
     <div>
       {filterDataChart != null ? (
         <>
-          <FormControl>
+          <FormControl sx={{ pl: 1 }}>
             <FormLabel id='demo-row-radio-buttons-group-label'>
-              Choose layer datasource
+              Chọn lớp Datasource
             </FormLabel>
-            <RadioGroup
+            {/* <RadioGroup
               row
               aria-labelledby='demo-row-radio-buttons-group-label'
               name='row-radio-buttons-group'
@@ -229,8 +309,27 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
                 control={<Radio />}
                 label='Đồng hồ khách hàng'
               />
-              <FormControlLabel value='dma' control={<Radio />} label='DMA' />
-            </RadioGroup>
+              <FormControlLabel
+                value='thuydai'
+                control={<Radio />}
+                label='Thủy Đài'
+              />
+            </RadioGroup> */}
+
+            <Autocomplete
+              sx={{ width: 300 }}
+              options={options}
+              getOptionLabel={(option) => option.label}
+              onChange={handleLayerChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  variant='outlined'
+                  label='Đồng hồ khách hàng'
+                />
+              )}
+              // Chỉnh sửa thêm ở đây nếu cần
+            />
           </FormControl>
 
           {/* Render Charts */}

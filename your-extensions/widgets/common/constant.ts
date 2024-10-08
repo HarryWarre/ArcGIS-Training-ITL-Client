@@ -13,10 +13,28 @@ export const queryAll = {
 
 export const propsChart_DongHoKhachHang = {
   title: "Biểu đồ hiển thị kích cỡ mỗi đồng hồ khách hàng",
-  description: "Số lượng",
+  description: "Loại kích cỡ đồng hồ",
 };
 
 export const propsChart_DMA = {
   title: "Biểu đồ hiển thị số lượng DMA",
   description: "Số lượng",
 };
+
+export const propsChart_ThuyDai = {
+  title: "Biểu đồ hiển thị phân loại tình trạng của các thủy đài",
+  description: "Loại tình trạng",
+};
+
+export const prioritizedFieldsDHKH = [
+  "OBJECTID",
+  "TINHTRANG",
+  "CODONGHO",
+  "SOHOSO",
+  "DONVICAPNHAT",
+];
+export const prioritizedFieldsThuyDai = [
+  "OBJECTID",
+  "TINHTRANG",
+  "DONVICAPNHAT",
+];
