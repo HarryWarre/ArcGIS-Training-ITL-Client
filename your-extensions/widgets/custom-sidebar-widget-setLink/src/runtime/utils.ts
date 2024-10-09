@@ -128,3 +128,28 @@ const getLinkValue = (page: IMPageJson) => {
     return "#";
   }
 };
+
+/**
+ * Return a function to check navigation item is actived or not
+ */
+export const useAvtivePage = () => {
+  const currentPageId = useSelector(
+    (state: IMState) => state?.appRuntimeInfo?.currentPageId
+  );
+  return React.useCallback(
+    (item: NavigationItem) => {
+      return getPageId(item) === currentPageId;
+    },
+    [currentPageId]
+  );
+};
+
+/**
+ * Get page id from `NavigationItem`
+ * @param item
+ */
+export const getPageId = (item: NavigationItem): string => {
+  if (!item?.value) return ''
+  const splits = item.value.split(',')
+  return splits?.length ? splits[0] : ''
+}

@@ -1,156 +1,172 @@
-import { React, type AllWidgetProps } from "jimu-core";
+import { hooks, React, type AllWidgetProps } from "jimu-core";
 import { type IMConfig } from "../config";
 import {
-  MenuItem,
-  Paper,
-  MenuList,
   Typography,
-  Collapse,
-  ListItemIcon,
+  List,
+  IconButton,
+  Divider,
 } from "../../../../node_plugin/node_modules/@mui/material";
-import { Icon, Link } from "jimu-ui";
+import MuiDrawer from "../../../../node_plugin/node_modules/@mui/material/Drawer";
 import { useNavigationData } from "./utils";
-import ExpandLess from "../../../../node_plugin/node_modules/@mui/icons-material/ExpandLess";
-import ExpandMore from "../../../../node_plugin/node_modules/@mui/icons-material/ExpandMore";
-// Note
-/**
- *
- * 1. Một navbar có chiều dài kéo dài xuống dưới hết màn hình
- * 2. Thực hiện Mini variant drawer để thu gọn và expand
- * 3. Xử lý vấn đề về collapse trong sidebar
- * 4. Xử lý đọc folder trong sidebar
- */
+import ChevronLeftIcon from "../../../../node_plugin/node_modules/@mui/icons-material/ChevronLeft";
+import ChevronRightIcon from "../../../../node_plugin/node_modules/@mui/icons-material/ChevronRight";
+import {
+  styled,
+  Theme,
+  CSSObject,
+} from "../../../../node_plugin/node_modules/@mui/material/styles";
+import MenuItem from "./components/menuItem";
+import { NavigationItem } from "jimu-ui";
+const drawerWidth = 240;
+
+const { useState, useEffect } = React;
 const Widget = (props: AllWidgetProps<IMConfig>) => {
-  const data = useNavigationData();
-  console.log(data);
-  const { useState } = React;
-  // State sub-menu
-  const [openSubMenus, setOpenSubMenus] = useState<{
+  // State for drawer and sub-menu
+  const [open, setOpen] = useState(true);
+  const [da1, setD1] = useState(1);
+  const [subMenuStates, setSubMenuStates] = useState<{
     [key: number]: boolean;
   }>({});
 
-  const handleToggleSubMenu = (index: number) => {
-    setOpenSubMenus((prev) => ({
-      ...prev,
-      [index]: !prev[index],
-    }));
+  const data = useNavigationData(); // gọi hook ở cấp cao nhất
+  const [dataPage, setDataPage] = useState<NavigationItem[]>([]);
+
+  useEffect(() => {
+    setDataPage(data);
+    console.log(data);
+  }, [data]);
+
+  // Get Data Menu
+  const isInSmallDevice = hooks.useCheckSmallBrowserSizeMode();
+
+  // Styling a drawyer
+  const openedMixin = (theme: Theme): CSSObject => ({
+    width: drawerWidth,
+    transition: theme.transitions.create("width", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.enteringScreen,
+    }),
+    overflowX: "hidden",
+  });
+
+  const closedMixin = (theme: Theme): CSSObject => ({
+    transition: theme.transitions.create("width", {
+      easing: theme.transitions.easing.sharp,
+      duration: theme.transitions.duration.leavingScreen,
+    }),
+    overflowX: "hidden",
+    width: `calc(${theme.spacing(10)} + 1px)`,
+    [theme.breakpoints.up("sm")]: {
+      width: `calc(${theme.spacing(9)} + 1px)`,
+    },
+  });
+
+  const DrawerHeader = styled("div")(({ theme }) => ({
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    padding: theme.spacing(0, 1),
+    ...theme.mixins.toolbar,
+  }));
+
+  const Drawer = styled(MuiDrawer, {
+    shouldForwardProp: (prop) => prop !== "open",
+  })(({ theme, open }) => ({
+    width: drawerWidth,
+    flexShrink: 0,
+    whiteSpace: "nowrap",
+    boxSizing: "border-box",
+    ...(open && {
+      ...openedMixin(theme),
+      "& .MuiDrawer-paper": openedMixin(theme),
+    }),
+    ...(!open && {
+      ...closedMixin(theme),
+      "& .MuiDrawer-paper": closedMixin(theme),
+    }),
+  }));
+
+  // Styling a link
+  const linkStyle = {
+    textDecoration: "none",
+    color: "inherit",
+    textAlign: "left",
+    padding: "10px",
+    display: "flex",
+    alignItems: "center",
+    transition: "width 0.3s ease",
   };
 
-  const renderLink = (item) => {
-    switch (item.linkType) {
-      case "PAGE":
-        return (
-          <Link
-            to={`/experience/0/page/${item.name.replace(/\s+/g, "-")}`} // item.value or name (name will go with .replace(/\s+/g, "-") )
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              textAlign: "left",
-              padding: "10px",
-            }}>
-            {item.icon ? <Icon icon={item.icon.svg} /> : null}
-            {item.name}
-          </Link>
-        );
-      case "WEB_ADDRESS":
-        return (
-          <Link
-            to={item.value} // item.value or name (name will go with .replace(/\s+/g, "-") )
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              textAlign: "left",
-              padding: "10px",
-            }}>
-            {item.icon ? <Icon icon={item.icon.svg} /> : null}
-            {item.name}
-          </Link>
-        );
-      default:
-        return (
-          <Link
-            style={{
-              textDecoration: "none",
-              color: "inherit",
-              textAlign: "left",
-              padding: "10px",
-            }}>
-            {item.icon ? <Icon icon={item.icon.svg} /> : null}
-            {item.name}
-          </Link>
-        );
-    }
+  const closedLinkStyle = {
+    ...linkStyle,
+    justifyContent: "center", // Center the icon when the drawer is closed
+    // width: "50px", // Smaller width for the icon-only view
+    whiteSpace: "nowrap", // Prevent text from wrapping
+    textAlign: "center",
   };
+
+  const openLinkStyle = {
+    ...linkStyle,
+    justifyContent: "start", // Regular style when drawer is open
+    width: "auto",
+  };
+
+  const handleDrawerOpen = () => setOpen(!open);
 
   return (
-    <Paper sx={{ width: "300px", maxWidth: "100%" }}>
-      <MenuList sx={{ display: "flex", flexDirection: "column" }}>
-        {Array.isArray(data) && data.length > 0 ? (
-          data.map((item, index) => (
-            <div key={index}>
-              <MenuItem
-                focusRipple={false}
-                onClick={
-                  item.subs ? () => handleToggleSubMenu(index) : undefined
-                } // Toggle sub-menu
-              >
-                {renderLink(item)}
-                {/* {item.subs &&
-                  item.subs.length > 0 &&
-                  (openSubMenus[index] ? <ExpandLess /> : <ExpandMore />)} */}
-                {item.subs &&
-                  item.subs.length > 0 &&
-                  (openSubMenus[index] ? (
-                    <ListItemIcon onClick={() => openSubMenus[index]}>
-                      <ExpandLess />
-                    </ListItemIcon>
-                  ) : (
-                    <ListItemIcon onClick={() => openSubMenus[index]}>
-                      <ExpandMore />
-                    </ListItemIcon>
-                  ))}
-              </MenuItem>
-              {item.subs &&
-                item.subs.length > 0 && ( // Check sub menu
-                  <Collapse
-                    in={openSubMenus[index]}
-                    timeout='auto'
-                    unmountOnExit>
-                    <MenuList sx={{ marginLeft: "15px" }}>
-                      {item.subs.map((subItem, subIndex) => (
-                        <MenuItem key={subIndex}>
-                          <Link
-                            style={{
-                              textDecoration: "none",
-                              color: "inherit",
-                              textAlign: "left",
-                              padding: "10px",
-                            }}
-                            to={`/experience/0/page/${subItem.name.replace(
-                              /\s+/g,
-                              "-"
-                            )}`}>
-                            <ListItemIcon>
-                              {subItem.icon ? (
-                                <Icon icon={subItem.icon.svg} />
-                              ) : null}
-                            </ListItemIcon>
-                            {subItem.name}
-                          </Link>
-                        </MenuItem>
-                      ))}
-                    </MenuList>
-                  </Collapse>
-                )}
-            </div>
+    <Drawer
+      variant='permanent'
+      open={open}
+      sx={{
+        "& .MuiDrawer-paper": {
+          overflow: "visible", // Allow the button to be visible outside the drawer
+        },
+      }}>
+      <DrawerHeader>
+        <IconButton
+          size='small'
+          onClick={handleDrawerOpen}
+          style={{
+            position: "absolute",
+            right: "-10px", // Move the button further to the right
+            top: "4%", // Vertically center it
+            transform: "translateY(-50%)",
+            zIndex: 3, // Ensure it's above the Drawer
+            background: "white",
+          }}>
+          {!isInSmallDevice ? (
+            !open ? (
+              <ChevronRightIcon />
+            ) : (
+              <ChevronLeftIcon />
+            )
+          ) : null}
+        </IconButton>
+      </DrawerHeader>
+
+      <Divider />
+      <List>
+        {Array.isArray(dataPage) && dataPage.length > 0 ? (
+          dataPage.map((item, index) => (
+            <MenuItem
+              dispatch={props.dispatch}
+              key={index}
+              item={item}
+              index={index}
+              open={open}
+              // subMenuStates={subMenuStates}
+              // handleToggleSubMenu={handleToggleSubMenu}
+              openLinkStyle={openLinkStyle}
+              closedLinkStyle={closedLinkStyle}
+            />
           ))
         ) : (
           <Typography
             variant='body2'
             sx={{ padding: "10px", textAlign: "center" }}></Typography>
         )}
-      </MenuList>
-    </Paper>
+      </List>
+    </Drawer>
   );
 };
 
