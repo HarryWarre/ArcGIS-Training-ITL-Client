@@ -1,0 +1,4 @@
+.active {
+  background-color: #f0f0f0; /* Màu nền cho trạng thái active */
+  font-weight: bold; /* Có thể thêm các style khác nếu muốn */
+}

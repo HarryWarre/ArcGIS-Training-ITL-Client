@@ -1,4 +1,4 @@
-import { hooks, React, type AllWidgetProps } from "jimu-core";
+import { appActions, hooks, React, type AllWidgetProps } from "jimu-core";
 import { type IMConfig } from "../config";
 import {
   Typography,
@@ -15,26 +15,48 @@ import {
   Theme,
   CSSObject,
 } from "../../../../node_plugin/node_modules/@mui/material/styles";
-import MenuItem from "./components/menuItem";
-import { NavigationItem } from "jimu-ui";
-const drawerWidth = 240;
+import MenuItems from "./components/menuItem";
+import { eMenuSidebar, eSidebar } from "./extension/my-store";
+import { useSelector } from "react-redux";
+import { IMState } from "jimu-core";
+const drawerWidth = 300;
 
 const { useState, useEffect } = React;
 const Widget = (props: AllWidgetProps<IMConfig>) => {
-  // State for drawer and sub-menu
-  const [open, setOpen] = useState(true);
-  const [da1, setD1] = useState(1);
-  const [subMenuStates, setSubMenuStates] = useState<{
-    [key: number]: boolean;
-  }>({});
+  const data = useNavigationData();
 
-  const data = useNavigationData(); // gọi hook ở cấp cao nhất
-  const [dataPage, setDataPage] = useState<NavigationItem[]>([]);
+  // const datasPage = useSelector((state: IMState) => {
+  //   const datasPageState = state.widgetsState?.[`${eSidebar.storeKey}`]?.data;
+  //   return datasPageState !== undefined ? datasPageState : [];
+  // });
 
-  useEffect(() => {
-    setDataPage(data);
-    console.log(data);
-  }, [data]);
+  const open = useSelector((state: IMState) => {
+    const menuState = state.widgetsState?.[`${eMenuSidebar.storeKey}`]?.menu;
+    return menuState !== undefined ? menuState : true; // Default to true only if undefined
+  });
+
+  // useEffect(() => {
+  //   if (data != datasPage && Object.keys(data).length !== 0) {
+  //     props.dispatch(
+  //       appActions.widgetStatePropChange(
+  //         eSidebar.storeKey,
+  //         eSidebar.sectionData,
+  //         data
+  //       )
+  //     );
+  //   }
+  // }, [data]);
+
+  // Function toggle state drawer, send new state into Redux
+  const handleDrawerOpen = () => {
+    props.dispatch(
+      appActions.widgetStatePropChange(
+        eMenuSidebar.storeKey,
+        eMenuSidebar.sectionMenuKey,
+        !open
+      )
+    );
+  };
 
   // Get Data Menu
   const isInSmallDevice = hooks.useCheckSmallBrowserSizeMode();
@@ -69,6 +91,14 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     ...theme.mixins.toolbar,
   }));
 
+  const DrawerBody = styled("div")(({ theme }) => ({
+    // display: "flex",
+    // alignItems: "center",
+    // justifyContent: "flex-end",
+    // padding: theme.spacing(0, 1),
+    ...theme.mixins.toolbar,
+  }));
+
   const Drawer = styled(MuiDrawer, {
     shouldForwardProp: (prop) => prop !== "open",
   })(({ theme, open }) => ({
@@ -76,13 +106,16 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     flexShrink: 0,
     whiteSpace: "nowrap",
     boxSizing: "border-box",
+    backgroundColor: "red",
     ...(open && {
       ...openedMixin(theme),
       "& .MuiDrawer-paper": openedMixin(theme),
+      backgroundColor: "grey",
     }),
     ...(!open && {
       ...closedMixin(theme),
       "& .MuiDrawer-paper": closedMixin(theme),
+      backgroundColor: "grey",
     }),
   }));
 
@@ -91,16 +124,17 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     textDecoration: "none",
     color: "inherit",
     textAlign: "left",
-    padding: "10px",
+    // padding: "10px",
     display: "flex",
     alignItems: "center",
-    transition: "width 0.3s ease",
+    transition: "width 0.5s ease",
   };
 
   const closedLinkStyle = {
     ...linkStyle,
     justifyContent: "center", // Center the icon when the drawer is closed
-    // width: "50px", // Smaller width for the icon-only view
+    // width: "50px",
+    padding: "10px",
     whiteSpace: "nowrap", // Prevent text from wrapping
     textAlign: "center",
   };
@@ -111,28 +145,29 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     width: "auto",
   };
 
-  const handleDrawerOpen = () => setOpen(!open);
-
   return (
     <Drawer
+      anchor='left'
       variant='permanent'
       open={open}
       sx={{
         "& .MuiDrawer-paper": {
-          overflow: "visible", // Allow the button to be visible outside the drawer
+          overflow: "visible",
         },
       }}>
-      <DrawerHeader>
+      <DrawerHeader sx={{ position: "sticky", zIndex: 3 }}>
         <IconButton
           size='small'
           onClick={handleDrawerOpen}
           style={{
             position: "absolute",
-            right: "-10px", // Move the button further to the right
-            top: "4%", // Vertically center it
+            right: "-15px", // Move the button further to the right
+            marginTop: "30px",
+            // top: "4%", // Vertically center it
             transform: "translateY(-50%)",
             zIndex: 3, // Ensure it's above the Drawer
             background: "white",
+            border: "0.5px solid lightgrey",
           }}>
           {!isInSmallDevice ? (
             !open ? (
@@ -144,28 +179,32 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         </IconButton>
       </DrawerHeader>
 
-      <Divider />
-      <List>
-        {Array.isArray(dataPage) && dataPage.length > 0 ? (
-          dataPage.map((item, index) => (
-            <MenuItem
-              dispatch={props.dispatch}
-              key={index}
-              item={item}
-              index={index}
-              open={open}
-              // subMenuStates={subMenuStates}
-              // handleToggleSubMenu={handleToggleSubMenu}
-              openLinkStyle={openLinkStyle}
-              closedLinkStyle={closedLinkStyle}
-            />
-          ))
-        ) : (
-          <Typography
-            variant='body2'
-            sx={{ padding: "10px", textAlign: "center" }}></Typography>
-        )}
-      </List>
+      <DrawerBody sx={{ position: "sticky", zIndex: 3 }}>
+        <Divider />
+
+        <List
+          sx={{
+            maxHeight: "100vh",
+            overflowY: "auto", // Enable vertical scroll
+            overflowX: "hidden", // Unenable horizontal scroll
+          }}>
+          {Array.isArray(data) && data.length > 0 ? (
+            data.map((item, index) => (
+              <MenuItems
+                dispatch={props.dispatch}
+                item={item}
+                index={index}
+                openLinkStyle={openLinkStyle}
+                closedLinkStyle={closedLinkStyle}
+              />
+            ))
+          ) : (
+            <Typography
+              variant='body2'
+              sx={{ padding: "10px", textAlign: "center" }}></Typography>
+          )}
+        </List>
+      </DrawerBody>
     </Drawer>
   );
 };
