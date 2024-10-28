@@ -29,6 +29,9 @@ import TabTable from "../components/tab-table";
 import useAddLayer from "../../../tab-table-view/hooks/useAddLayer";
 import { useDispatch } from "react-redux";
 import { eDMA } from "../../../view-data-map/src/extensions/my-store";
+import { showAreaOnMap, zoomToMapByExtent } from "./function";
+import Point from "@arcgis/core/geometry/Point";
+import { Extent } from "@arcgis/core/geometry";
 
 const useState = React.useState;
 const useRef = React.useRef;
@@ -232,7 +235,30 @@ const Widget = (props: AllWidgetProps<any>) => {
       (r) => r.getData().OBJECTID === rowData.OBJECTID
     );
 
-    jMapView && zoomToPoint({ record });
+    // jMapView && zoomToPoint({ record });
+
+    const point = new Point({
+      x: record.getGeometry()["x"],
+      y: record.getGeometry()["y"],
+      z: record.getGeometry()["z"], // Optional
+      spatialReference: record.getGeometry()["spatialReference"],
+    });
+
+    const buffer = 1;
+
+    if (jMapView && _viewManager) {
+      const extent = new Extent({
+        xmin: point.x - buffer,
+        ymin: point.y - buffer,
+        xmax: point.x + buffer,
+        ymax: point.y + buffer,
+        spatialReference: point.spatialReference,
+      });
+
+      await zoomToMapByExtent(extent, _viewManager, mapWidgetId);
+      // zoomToPoint({ record });
+      await showAreaOnMap(jMapView, point, 5);
+    }
   };
 
   // Handle tab change between DHKH and Thuy Dai
@@ -303,7 +329,11 @@ const Widget = (props: AllWidgetProps<any>) => {
 
         <TabPanel value={tabValue} index='thuydai'>
           <TabTable
-            data={thuyDaiReceive ? thuyDaiReceive : thuyDaiQuery}
+            data={
+              thuyDaiReceive && Object.keys(thuyDaiReceive).length > 0
+                ? thuyDaiReceive
+                : thuyDaiQuery
+            }
             columnHeader={headerThuyDai}
             featureLayerName='thuydai'
             onClickRow={handleZoomOnMap}

@@ -47,7 +47,7 @@ const useZoomShape = (jimuMapView: JimuMapView) => {
         size: "12px",
         outline: { color: "#00FFFF", width: 2 },
       };
-      hightLightShape({ geometry: point, symbol: symbol });
+      // hightLightShape({ geometry: point, symbol: symbol });
     });
   };
 

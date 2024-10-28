@@ -64,7 +64,13 @@ const DMA_Table = ({
     enableRowActions: true,
     state: { isLoading: !dataTable.length, rowSelection },
     renderRowActions: ({ row }) => (
-      <IconButton onClick={() => onClickrow(row.original)}>
+      <IconButton
+        onClick={(event) => {
+          if (rowSelection[row.id] == true) {
+            event.stopPropagation(); // Prevent click to row function below
+          }
+          onClickrow(row.original);
+        }}>
         <ZoomIn />
       </IconButton>
     ),
@@ -75,12 +81,14 @@ const DMA_Table = ({
         // 3. Gọi bên tab-table, nếu tồn tại thì dùng, không thì sử dụng query mặc định
         // const dma = { ...row.original };
         // const rowIndex = row.index; // Get index
-
-        queryDHKH(row.original["OBJECTID"]);
         setRowSelection((prev) => ({
           ...prev,
           [row.id]: !prev[row.id],
         }));
+        if (rowSelection[row.id] !== true) {
+          console.log(rowSelection[row.id]);
+          queryDHKH(row.original["OBJECTID"]);
+        }
       },
       selected: !!rowSelection[row.id],
       sx: {

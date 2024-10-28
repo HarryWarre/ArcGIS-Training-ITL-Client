@@ -19,7 +19,7 @@ const useSpatialQuery = (jimuMapView: JimuMapView) => {
     { record, datasource }: ISpatialQuery,
     symbol: __esri.Symbol
   ) => {
-    removeAllPoint();
+    // removeAllPoint(); // Unenable for multi records
     const queryParams: FeatureLayerQueryParams = {
       where: "",
       outFields: ["*"],

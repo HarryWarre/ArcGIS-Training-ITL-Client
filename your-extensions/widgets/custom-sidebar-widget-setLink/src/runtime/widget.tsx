@@ -16,7 +16,7 @@ import {
   CSSObject,
 } from "../../../../node_plugin/node_modules/@mui/material/styles";
 import MenuItems from "./components/menuItem";
-import { eMenuSidebar, eSidebar } from "./extension/my-store";
+import { eMenuSidebar } from "./extension/my-store";
 import { useSelector } from "react-redux";
 import { IMState } from "jimu-core";
 const drawerWidth = 300;
@@ -25,27 +25,10 @@ const { useState, useEffect } = React;
 const Widget = (props: AllWidgetProps<IMConfig>) => {
   const data = useNavigationData();
 
-  // const datasPage = useSelector((state: IMState) => {
-  //   const datasPageState = state.widgetsState?.[`${eSidebar.storeKey}`]?.data;
-  //   return datasPageState !== undefined ? datasPageState : [];
-  // });
-
   const open = useSelector((state: IMState) => {
     const menuState = state.widgetsState?.[`${eMenuSidebar.storeKey}`]?.menu;
     return menuState !== undefined ? menuState : true; // Default to true only if undefined
   });
-
-  // useEffect(() => {
-  //   if (data != datasPage && Object.keys(data).length !== 0) {
-  //     props.dispatch(
-  //       appActions.widgetStatePropChange(
-  //         eSidebar.storeKey,
-  //         eSidebar.sectionData,
-  //         data
-  //       )
-  //     );
-  //   }
-  // }, [data]);
 
   // Function toggle state drawer, send new state into Redux
   const handleDrawerOpen = () => {
@@ -92,10 +75,6 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   }));
 
   const DrawerBody = styled("div")(({ theme }) => ({
-    // display: "flex",
-    // alignItems: "center",
-    // justifyContent: "flex-end",
-    // padding: theme.spacing(0, 1),
     ...theme.mixins.toolbar,
   }));
 
@@ -124,7 +103,6 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     textDecoration: "none",
     color: "inherit",
     textAlign: "left",
-    // padding: "10px",
     display: "flex",
     alignItems: "center",
     transition: "width 0.5s ease",
@@ -163,7 +141,6 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
             position: "absolute",
             right: "-15px", // Move the button further to the right
             marginTop: "30px",
-            // top: "4%", // Vertically center it
             transform: "translateY(-50%)",
             zIndex: 3, // Ensure it's above the Drawer
             background: "white",

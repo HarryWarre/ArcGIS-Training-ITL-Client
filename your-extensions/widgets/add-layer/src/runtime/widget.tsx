@@ -20,7 +20,7 @@ const Widget = (props: AllWidgetProps<any>) => {
       url: "https://services3.arcgis.com/GVgbJbqm8hXASVYi/arcgis/rest/services/Trailheads_Styled/FeatureServer/0",
     });
 
-    // Add the kayer to the map (accesed through the Experience Builder humuMapView data source)
+    // Add the layer to the map (accesed through the Experience Builder humuMapView data source)
     jimuMapView.view.map.add(layer);
   };
   return (

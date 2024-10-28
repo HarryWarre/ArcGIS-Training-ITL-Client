@@ -14,7 +14,7 @@ import {
   alpha,
 } from "../../../../../node_plugin/node_modules/@mui/material/styles";
 import MenuItem from "../../../../../node_plugin/node_modules/@mui/material/MenuItem";
-import { Icon, Link, Typography } from "jimu-ui";
+import { Icon, Link } from "jimu-ui";
 import { appActions } from "jimu-core";
 import { eMenuSidebar, eSidebar } from "../extension/my-store";
 import { useSelector } from "react-redux";
@@ -22,7 +22,8 @@ import { IMState } from "jimu-core";
 import KeyboardArrowDownIcon from "../../../../../node_plugin/node_modules/@mui/icons-material/KeyboardArrowDown";
 import ChevronRightIcon from "../../../../../node_plugin/node_modules/@mui/icons-material/ChevronRight";
 const { useState, useEffect } = React;
-// Component con cho từng menu item
+
+// Component children for each menu items
 const MenuItems = ({
   dispatch,
   item,
@@ -33,26 +34,27 @@ const MenuItems = ({
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
 
+  // Selector get state menu is open
   const open = useSelector((state: IMState) => {
     const menuState = state.widgetsState?.[`${eMenuSidebar.storeKey}`]?.menu;
     return menuState !== undefined ? menuState : true; // Default to true only if undefined
   });
 
+  // Current Page selector
   const currentPage = useSelector((state: IMState) => {
     return state.appRuntimeInfo.currentPageId; // Default to true only if undefined
   });
-
-  // Function check current Page
-  const checkCurrentPage = (idPage) => {
-    console.log(idPage === currentPage);
-    return idPage === currentPage;
-  };
 
   // state submenu from Redux
   const subMenuState = useSelector(
     (state: IMState) =>
       state.widgetsState?.[`${eSidebar.storeKey}`]?.submenu || {}
   );
+
+  // Function check current Page
+  const checkCurrentPage = (idPage) => {
+    return idPage === currentPage;
+  };
 
   // Function toggle submenu use dispatch to change state submenu
   const handleToggleSubMenu = (index: number) => {
@@ -72,6 +74,7 @@ const MenuItems = ({
     }
   };
 
+  // Toggle handle open and close for sub menu in closed styled
   const handleMouseEnter = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
@@ -79,6 +82,7 @@ const MenuItems = ({
     setAnchorEl(null);
   };
 
+  // Styling sub menu in closed menu
   const StyledMenu = styled((props: MenuProps) => (
     <Menu
       elevation={0}
@@ -132,15 +136,6 @@ const MenuItems = ({
               }
             : undefined
         }
-        // onMouseLeave={
-        //   item.subs
-        //     ? () => {
-        //         if (open) {
-        //           handleClose(); // Đóng menu khi rời chuột
-        //         }
-        //       }
-        //     : undefined
-        // }
         onClick={
           item.subs
             ? (event) => (open ? handleToggleSubMenu(index) : undefined)
@@ -183,24 +178,20 @@ const MenuItems = ({
         onMouseLeave={handleClose}>
         {item.subs.map((subItem, subIndex) => (
           <Box key={subIndex} sx={{ width: "100%" }}>
-            {" "}
-            {/* Đảm bảo Box chiếm toàn bộ chiều rộng */}
             <MenuItem
               style={{
                 textAlign: "start",
                 textDecoration: "none",
                 color: "grey",
                 width: "95%",
-                padding: "10px 5px",
+                padding: "10px 10px",
                 borderRadius: "10px",
-                // margin: "10px",
-              }} // Đặt chiều rộng 100%
+              }}
               onClick={handleClose}
               component={Link}
               to={`/experience/0/page/${subItem.name.replace(/\s+/g, "-")}`}
               sx={{
                 margin: "5px",
-                // width: "90%",
                 "&:hover": {
                   backgroundColor: "grey.200",
                 },
@@ -219,10 +210,9 @@ const MenuItems = ({
           <List>
             {item.subs.map((subItem, subIndex) => (
               <ListItemButton
-                // selected={checkCurrentPage(subItem.value)}
                 sx={{
                   borderRadius: "10px",
-                  margin: "10px",
+                  margin: "20px",
                   color:
                     open && checkCurrentPage(subItem.value)
                       ? "#00A76F"

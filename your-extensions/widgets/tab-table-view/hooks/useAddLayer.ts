@@ -48,7 +48,7 @@ const useAddLayer = (jimuMapView: JimuMapView) => {
     // Remove all Point first
     if (!jimuMapView) return;
     const handle = jimuMapView.view.on("click", removeAllPoint);
-    return () => handle.remove();
+    // return () => handle.remove();
   }, [jimuMapView]);
 
   const addPoint = ({ records }: IAddShape, symbol: __esri.Symbol) => {
@@ -56,7 +56,7 @@ const useAddLayer = (jimuMapView: JimuMapView) => {
     const graphicsLayer = GraphicsLayerRef.current;
     const Graphic = GraphicRef.current;
     const Point = PointRef.current;
-    removeAllPoint();
+    // removeAllPoint();
     records.forEach((record) => {
       const point = new Point({
         x: record["GEOMETRY"]["x"],
@@ -78,9 +78,9 @@ const useAddLayer = (jimuMapView: JimuMapView) => {
     // Get the current Graphic layer
     const currentGraphicLayer = GraphicsLayerRef.current;
     // Remove all graphic on Layer
-    currentGraphicLayer.graphics.removeAll();
+    currentGraphicLayer?.graphics?.removeAll();
     //Remove current layer out of mapview
-    jimuMapView.view.map.remove(currentGraphicLayer);
+    jimuMapView?.view.map.remove(currentGraphicLayer);
   };
   return { addPoint, removeAllPoint };
 };

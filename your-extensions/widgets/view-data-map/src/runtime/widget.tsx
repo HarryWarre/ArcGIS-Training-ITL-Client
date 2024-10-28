@@ -77,7 +77,7 @@ const Widget = (props: AllWidgetProps<any>) => {
   const [pageSize, setPageSize] = useState(6);
   const [jMapView, setjMapView] = useState(null);
 
-  const { spatialQuery } = useSpatialQuery(jMapView);
+  const { spatialQuery, removeAllPoint } = useSpatialQuery(jMapView);
   const { hightLightShape, removeHighlightShape } = useHighLightLayer(jMapView);
 
   let timeout = null as any;
@@ -125,11 +125,43 @@ const Widget = (props: AllWidgetProps<any>) => {
       DMARef.current = dsArr[2];
       DHKHRef.current = dsArr[0];
       ThuyDaiRef.current = dsArr[1];
+
+      changeDefinitionExpression("", mapWidgetId, "1=0", 2); // DMA
+      changeDefinitionExpression("", mapWidgetId, "1=0", 1); // ThuyDai
+      changeDefinitionExpression("", mapWidgetId, "1=0", 0); // DHKH
+
       clearTimeout(timeout);
     } else {
       setTimeout(() => getDs(), delayTime);
     } // Default inteval
   }
+
+  /**
+   *
+   * @param DMZ
+   * @param mapWidgetId to get the layer ID from datasource index
+   * @param baseExpression SQL CLAUSE
+   * @param INDEX_DATA_SOURCE The index of the datasource in list datasources which is enabled in setting
+   */
+  const changeDefinitionExpression = async (
+    DMZ: string,
+    mapWidgetId,
+    baseExpression,
+    INDEX_DATA_SOURCE
+  ) => {
+    const dsIndex = INDEX_DATA_SOURCE;
+
+    await getJimuMapView(mapWidgetId, _viewManager).then((mapView) => {
+      const layerId = props.useDataSources?.[dsIndex]?.dataSourceId; // Get the layer ID from datasource index
+      if (layerId) {
+        const layer = mapView?.jimuLayerViews![`${mapWidgetId}-${layerId}`]
+          .layer as __esri.Sublayer;
+        if (layer) {
+          layer.definitionExpression = baseExpression;
+        }
+      }
+    });
+  };
 
   const getDMAData = async (ds: DataSource) => {
     const _ds = ds as FeatureLayerDataSource;
@@ -233,12 +265,16 @@ const Widget = (props: AllWidgetProps<any>) => {
 
       // console.log(rowData.OBJECTID);
       // Zoom
-      await jMapView.view.goTo({ target: mergedGeometry } ?? {}, {
-        // The address where map should zoom
-        animate: true,
-        duration: animationDurationTime,
-      });
+      await jMapView.view.goTo(
+        { target: mergedGeometry },
+        {
+          // The address where map should zoom
+          animate: true,
+          duration: animationDurationTime,
+        }
+      );
 
+      // Add Point Symbol to each DHKH in Geometry of DMA Selected
       spatialQuery(
         {
           record: geometryDMA as DataRecord,
@@ -275,7 +311,6 @@ const Widget = (props: AllWidgetProps<any>) => {
 
             if (dhkhData && thuyDaiData) {
               // console.log("DHKhData: ", dhkhData); // Log kết quả trước khi dispatch
-
               dispatch(
                 appActions.widgetStatePropChange(
                   eDMA.storeKey, // Widget ID
@@ -299,6 +334,15 @@ const Widget = (props: AllWidgetProps<any>) => {
         .catch((error) => {
           console.error("Error querying DMA:", error);
         });
+
+      // The record for zoom, this needs info about OBJECTID and MADMA
+      const ds = getDataSourceForIndex(1); // Get first datasource (DMA)
+
+      if (!ds) {
+        const notify = () => toast.error("Can not get Datasource");
+        notify();
+        return;
+      }
     }
   };
 
@@ -322,7 +366,12 @@ const Widget = (props: AllWidgetProps<any>) => {
   };
 
   const hightlightDMAs = async (listDMAs) => {
-    // console.log(listDMAs);
+    changeDefinitionExpression(
+      "",
+      mapWidgetId,
+      `OBJECTID IN (${listDMAs.join(",")})`,
+      2
+    );
     /**
      * Dựa vào list DMA, highlight từng DMA
      */
@@ -331,6 +380,7 @@ const Widget = (props: AllWidgetProps<any>) => {
     const jMapView = await getJimuMapView(mapWidgetId, _viewManager);
 
     if (jMapView) {
+      removeAllPoint();
       if (highlightHandler.current) {
         highlightHandler.current?.remove();
         // highlightHandler.current = null;
@@ -347,6 +397,32 @@ const Widget = (props: AllWidgetProps<any>) => {
         highlightHandler.current = (
           layerView as JimuSceneLayerView
         ).view.highlight(listDMAs);
+      }
+
+      if (dataDMA) {
+        const geometryDMA = dataDMA.records.find(
+          (i: any) =>
+            Object.fromEntries(Object.entries(i?.feature?.attributes))
+              ?.OBJECTID == listDMAs[0]
+        );
+
+        const geometryDMAs = dataDMA.records.filter((i: any) =>
+          listDMAs.includes(
+            Object.fromEntries(Object.entries(i?.feature?.attributes))?.OBJECTID
+          )
+        );
+        console.log(geometryDMAs);
+        console.log(geometryDMA);
+        // Add Point Symbol to each DHKH in Geometry of DMA Selected
+        geometryDMAs.forEach((element) => {
+          spatialQuery(
+            {
+              record: element as DataRecord,
+              datasource: DHKHRef.current as FeatureLayerDataSource,
+            },
+            dhkhPointSymbol
+          );
+        });
       }
     }
   };
@@ -391,3 +467,6 @@ const Widget = (props: AllWidgetProps<any>) => {
 };
 
 export default Widget;
+
+// Xử lý chức năng xóa nếu như unselect DHKH
+//Chọn DMAs thì sẽ hiện cả DHKH

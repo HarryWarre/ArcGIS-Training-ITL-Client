@@ -38,7 +38,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 
   const handlePageClick = (pageId: string) => {
     // Kiểm tra thuộc tính có sẵn trong urlUtils
-    window.location.href = urlUtils.getPageLinkUrl((pageId = pageId));
+    // window.location.href = urlUtils.getPageLinkUrl((pageId = pageId));
   };
 
   return (
