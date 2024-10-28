@@ -48,6 +48,7 @@ import { eDMA } from "../extensions/my-store";
 import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
 import useHighLightLayer from "../../../tab-table-view/hooks/useHighLightLayer";
 import { dhkhPointSymbol } from "../../../common/symbols";
+import { blinkPolygon } from "./function";
 
 //Declear Hooks
 const useState = React.useState;
@@ -380,6 +381,19 @@ const Widget = (props: AllWidgetProps<any>) => {
     const jMapView = await getJimuMapView(mapWidgetId, _viewManager);
 
     if (jMapView) {
+      jMapView.view.on("click", async (event) => {
+        const response = await jMapView.view.hitTest(event);
+        if (response.results.length > 0) {
+          const graphic = response.results[0]?.["graphic"];
+          const polygonGeometry = graphic.geometry;
+
+          // Gọi hàm blinkPolygon
+          blinkPolygon(jMapView, polygonGeometry, 3); // Nhấp nháy 3 lần
+        } else {
+          console.log("Không có đồ họa nào tại vị trí này.");
+        }
+      });
+
       removeAllPoint();
       if (highlightHandler.current) {
         highlightHandler.current?.remove();

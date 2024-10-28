@@ -1,5 +1,4 @@
 import Graphic from "@arcgis/core/Graphic";
-import Point from "@arcgis/core/geometry/Point";
 import geometryEngine from "@arcgis/core/geometry/geometryEngine";
 import {
   FeatureLayerDataSource,
@@ -80,8 +79,7 @@ export async function highlight_point_on_map_by_graphic(
   // Create a graphic and add the geometry and symbol to it
   const pointGraphic = new Graphic({
     geometry: point as __esri.Point,
-    // symbol: markerSymbol,
-    symbol: dhkhPointSymbol,
+    symbol: markerSymbol,
   });
 
   // Add the graphic to the view with delay
@@ -326,8 +324,6 @@ export async function showAreaOnMap(
     latitude: point.y,
     spatialReference: point.spatialReference,
   };
-
-  console.log(points);
 
   // Create a symbol for rendering the graphic
   let markerSymbol = {
