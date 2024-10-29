@@ -1,0 +1,46 @@
+styles.css #tabbed-popup {
+  font-family: Arial, sans-serif; /* Set a default font */
+  /* border: 1px solid #ccc; Add a border around the popup */
+  border-radius: 5px; /* Round the corners */
+  padding: 10px; /* Add padding inside the popup */
+  /* background-color: #ccc; Set a white background */
+}
+
+.tabs {
+  list-style-type: none; /* Remove default list styling */
+  padding: 0; /* Remove padding */
+  display: flex; /* Use flexbox for horizontal layout */
+  /* border-bottom: 2px solid #ccc; Add a bottom border to the tabs */
+}
+
+.tab {
+  padding: 10px 20px; /* Add padding to each tab */
+  cursor: pointer; /* Change cursor to pointer on hover */
+  background-color: #f1f1f1; /* Set a light background color */
+  margin-right: 5px; /* Add space between tabs */
+  border: 1px solid transparent; /* Initial border */
+  border-bottom: none; /* Remove bottom border */
+  transition: background-color 0.3s; /* Smooth transition for hover effect */
+}
+
+.tab:hover {
+  background-color: #e0e0e0; /* Change background color on hover */
+}
+
+.tab.active {
+  background-color: #e0e0e0; /* Set background color for the active tab */
+  /* border-color: #ccc; Add a border color for the active tab */
+  /* border-bottom: 2px solid white; Hide the border below the active tab */
+  font-weight: bold; /* Make the active tab bold */
+}
+
+.tab-content {
+  /* border: 1px solid #ccc; Add a border around the content */
+  padding: 10px; /* Add padding inside the content */
+  margin-top: 10px; /* Space between tabs and content */
+  /*display: none; /* Initially hide all tab content */
+}
+
+.tab-content.active {
+  display: block; /* Show the active tab content */
+}

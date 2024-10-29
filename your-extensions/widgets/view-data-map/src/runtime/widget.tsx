@@ -7,6 +7,7 @@
  * 4. Kiểm tra dataSouce, tạo query params
  * 5. Thực hiện query
  */
+const css = require("./stylePopup.css");
 import {
   FeatureLayerDataSource,
   JimuSceneLayerView,
@@ -48,7 +49,8 @@ import { eDMA } from "../extensions/my-store";
 import useSpatialQuery from "../../../tab-table-view/hooks/useSpatialQuery";
 import useHighLightLayer from "../../../tab-table-view/hooks/useHighLightLayer";
 import { dhkhPointSymbol } from "../../../common/symbols";
-import { blinkPolygon } from "./function";
+import { blinkPolygon, getDHKHIDsInGeometry } from "./function";
+import { createTabbedPopup } from "./tabbedPopup";
 
 //Declear Hooks
 const useState = React.useState;
@@ -106,6 +108,60 @@ const Widget = (props: AllWidgetProps<any>) => {
 
     getJMapview();
   }, [isDataSourcesReady]);
+
+  useEffect(() => {
+    if (jMapView) {
+      (() => {
+        if (mapWidgetId) {
+          const view: __esri.MapView | __esri.SceneView = jMapView?.view;
+          view.popupEnabled = false;
+          view?.on("click", (e) => handleLogicWhenOpenPopup(e, view));
+        }
+      })();
+    }
+
+    return () => {
+      removeEventListener("click", jMapView);
+    };
+  }, [jMapView]);
+
+  const handleLogicWhenOpenPopup = async (
+    event: __esri.ViewClickEvent, // event
+    view: __esri.MapView | __esri.SceneView // view from jimumapview
+  ) => {
+    const { dataSourceId } = props.useDataSources?.[0];
+    const layerId = mapWidgetId + "-" + dataSourceId;
+    const layer = jMapView?.jimuLayerViews?.[layerId]?.layer;
+    console.log(layer);
+
+    const ds: any = DataSourceManager.getInstance().getDataSource(dataSourceId);
+    // layer.popupEnabled = false;
+    const histTestResp = await view?.hitTest(event); // Response from hitTest function
+    console.log("histTestResp", histTestResp); // Return graphic layers
+
+    const graphicHits = histTestResp.results
+      ?.slice(0, 3) // Get 3 head value
+      ?.filter(
+        ({ layer: graphicLayer }: any) =>
+          graphicLayer && graphicLayer.id === layer?.id
+      );
+
+    if (graphicHits.length) {
+      const viewLayerFiter = graphicHits.map((item: any) => item.graphic);
+
+      for (let index = 0; index < viewLayerFiter.length; index++) {
+        const item = viewLayerFiter[index];
+
+        const popupOptions = {
+          title: "Custom popup",
+          location: event.mapPoint,
+          content: createTabbedPopup(),
+        };
+        // view.popup = null;
+        view.openPopup(popupOptions);
+      }
+    }
+  };
 
   const getJMapview = async () => {
     setjMapView(await getJimuMapView(mapWidgetId, _viewManager));
@@ -222,58 +278,59 @@ const Widget = (props: AllWidgetProps<any>) => {
 
       const geometry = geometryDMA.getGeometry() as IPolygon;
 
-      const jMapView = await getJimuMapView(mapWidgetId, _viewManager); // Declare jMapView
+      // const jMapView = await getJimuMapView(mapWidgetId, _viewManager); // Declare jMapView
       // console.log(jMapView);
-      const { geometries } = await projectPointGeometryPolygon(
-        ProjectGeocodeURL,
-        geometry?.spatialReference, // Input Spacial
-        jMapView?.view?.spatialReference, // Expected Spacial
-        geometry?.rings // Point to create the Geometry
-      );
 
-      if (!geometries) {
-        return;
-      }
+      if (jMapView) {
+        const { geometries } = await projectPointGeometryPolygon(
+          ProjectGeocodeURL,
+          geometry?.spatialReference, // Input Spacial
+          jMapView?.view?.spatialReference, // Expected Spacial
+          geometry?.rings // Point to create the Geometry
+        );
 
-      /**
-       * Merge Geometries to one shape
-       */
-      const mergedGeometry = mergeGeometry(
-        geometries?.map((geo) => ({
-          type: "point",
-          ...geo,
-          spatialReference: jMapView.view.spatialReference,
-        }))
-      );
-
-      if (!mergedGeometry) {
-        return;
-      }
-
-      if (highlightHandler.current) {
-        highlightHandler.current?.remove();
-      }
-      const layerView =
-        jMapView.jimuLayerViews[
-          mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId // Select Datasource of DMA ***
-        ];
-      // console.log(layerView);
-      // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
-
-      highlightHandler.current = (
-        layerView as JimuSceneLayerView
-      ).view.highlight(rowData.OBJECTID);
-
-      // console.log(rowData.OBJECTID);
-      // Zoom
-      await jMapView.view.goTo(
-        { target: mergedGeometry },
-        {
-          // The address where map should zoom
-          animate: true,
-          duration: animationDurationTime,
+        if (!geometries) {
+          return;
         }
-      );
+        /**
+         * Merge Geometries to one shape
+         */
+        const mergedGeometry = mergeGeometry(
+          geometries?.map((geo) => ({
+            type: "point",
+            ...geo,
+            spatialReference: jMapView.view.spatialReference,
+          }))
+        );
+
+        if (!mergedGeometry) {
+          return;
+        }
+
+        if (highlightHandler.current) {
+          highlightHandler.current?.remove();
+        }
+        const layerView =
+          jMapView.jimuLayerViews[
+            mapWidgetId + "-" + props.useDataSources?.[2]?.dataSourceId // Select Datasource of DMA ***
+          ];
+        // console.log(layerView);
+        // console.log("jMapView.jimuLayerViews", jMapView.jimuLayerViews); //  Print layer views
+
+        highlightHandler.current = (
+          layerView as JimuSceneLayerView
+        ).view.highlight(rowData.OBJECTID);
+        // console.log(rowData.OBJECTID);
+        // Zoom
+        await jMapView.view.goTo(
+          { target: mergedGeometry },
+          {
+            // The address where map should zoom
+            animate: true,
+            duration: animationDurationTime,
+          }
+        );
+      }
 
       // Add Point Symbol to each DHKH in Geometry of DMA Selected
       spatialQuery(
@@ -366,6 +423,29 @@ const Widget = (props: AllWidgetProps<any>) => {
     return null; //
   };
 
+  const displayAllGeometries = async (geometryDMAs) => {
+    try {
+      // Receieve Promises from getCustomerIDsInGeometry
+      const allIDsPromises = geometryDMAs.map((element) =>
+        getDHKHIDsInGeometry(element as DataRecord, DHKHRef.current)
+      );
+
+      // Chờ tất cả các Promise hoàn thành và ghép tất cả ID lại thành một mảng
+      const allIDsArray = await Promise.all(allIDsPromises);
+      const allIDs = allIDsArray.flat(); // Gộp tất cả mảng ID thành một mảng duy nhất
+
+      // Gọi changeDefinitionExpression với tất cả ID đã ghép
+      changeDefinitionExpression(
+        "",
+        mapWidgetId,
+        `OBJECTID IN (${allIDs.join(",")})`,
+        0
+      );
+    } catch (error) {
+      console.error("Error displaying geometries:", error);
+    }
+  };
+
   const hightlightDMAs = async (listDMAs) => {
     changeDefinitionExpression(
       "",
@@ -390,7 +470,7 @@ const Widget = (props: AllWidgetProps<any>) => {
           // Gọi hàm blinkPolygon
           blinkPolygon(jMapView, polygonGeometry, 3); // Nhấp nháy 3 lần
         } else {
-          console.log("Không có đồ họa nào tại vị trí này.");
+          console.error("Không có đồ họa nào tại vị trí này.");
         }
       });
 
@@ -414,29 +494,22 @@ const Widget = (props: AllWidgetProps<any>) => {
       }
 
       if (dataDMA) {
-        const geometryDMA = dataDMA.records.find(
-          (i: any) =>
-            Object.fromEntries(Object.entries(i?.feature?.attributes))
-              ?.OBJECTID == listDMAs[0]
-        );
-
         const geometryDMAs = dataDMA.records.filter((i: any) =>
           listDMAs.includes(
             Object.fromEntries(Object.entries(i?.feature?.attributes))?.OBJECTID
           )
         );
-        console.log(geometryDMAs);
-        console.log(geometryDMA);
         // Add Point Symbol to each DHKH in Geometry of DMA Selected
-        geometryDMAs.forEach((element) => {
-          spatialQuery(
-            {
-              record: element as DataRecord,
-              datasource: DHKHRef.current as FeatureLayerDataSource,
-            },
-            dhkhPointSymbol
-          );
+        geometryDMAs.forEach(async (element) => {
+          // spatialQuery(
+          //   {
+          //     record: element as DataRecord,
+          //     datasource: DHKHRef.current as FeatureLayerDataSource,
+          //   },
+          //   dhkhPointSymbol
+          // );
         });
+        displayAllGeometries(geometryDMAs);
       }
     }
   };
@@ -481,6 +554,3 @@ const Widget = (props: AllWidgetProps<any>) => {
 };
 
 export default Widget;
-
-// Xử lý chức năng xóa nếu như unselect DHKH
-//Chọn DMAs thì sẽ hiện cả DHKH

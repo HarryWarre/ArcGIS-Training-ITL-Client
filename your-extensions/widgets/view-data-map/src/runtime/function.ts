@@ -1,4 +1,5 @@
 import Graphic from "esri/Graphic";
+import { DataRecord, FeatureLayerQueryParams } from "jimu-core";
 
 export async function blinkPolygon(
   jimuMapView,
@@ -37,3 +38,27 @@ export async function blinkPolygon(
     jimuMapView.view.graphics.add(polygonGraphic);
   }
 }
+
+export const getDHKHIDsInGeometry = async (
+  record: DataRecord,
+  datasource: any // Thay 'any' bằng kiểu của datasource nếu biết
+): Promise<string[]> => {
+  const queryParams: FeatureLayerQueryParams = {
+    where: "",
+    outFields: ["*"],
+    returnGeometry: true,
+    geometry: record.getGeometry(),
+  };
+
+  try {
+    const data = await datasource?.query(queryParams);
+    const customerIDs = data.records.map(
+      (r: DataRecord) => r.getData()["OBJECTID"]
+    );
+
+    return customerIDs;
+  } catch (error) {
+    console.log("Error fetching customer IDs:", error);
+    return [];
+  }
+};
