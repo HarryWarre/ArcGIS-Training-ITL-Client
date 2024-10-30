@@ -46,6 +46,13 @@ export interface StatisticsDataSettingProps
     series: ImmutableArray<WebChartSeries>,
     seriesRelatedProps: SeriesRelatedProps
   ) => void;
+
+  isParseDateEnabled: boolean; // Nhận giá trị `isParseDateEnabled` từ ChartSetting
+  minimumPeriod: string;
+  onSettingChange: (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => void;
 }
 
 const CategoryTypes = {
@@ -64,6 +71,9 @@ export const StatisticsDataSetting = (
     type = "barSeries",
     useDataSources,
     chartDataSource: propChartDataSource = defaultChartDataSource,
+    isParseDateEnabled,
+    minimumPeriod,
+    onSettingChange,
     series,
     onChange,
     ...others
@@ -145,7 +155,10 @@ export const StatisticsDataSetting = (
             supportPercentile={supportPercentile}
             chartDataSource={propChartDataSource}
             useDataSources={useDataSources}
-            onChange={onChange}></ByGroupData>
+            onChange={onChange}
+            isParseDateEnabled={isParseDateEnabled}
+            minimumPeriod={minimumPeriod}
+            onSettingChange={onSettingChange}></ByGroupData>
         )}
         {categoryType === CategoryType.ByField && (
           <ByFieldData

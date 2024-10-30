@@ -1,19 +1,38 @@
-import { type IMFeatureLayerQueryParams, type ImmutableArray, type ImmutableObject, React, type UseDataSource, hooks } from 'jimu-core'
-import { SettingCollapse, SettingSection } from 'jimu-ui/advanced/setting-components'
-import { type ChartTools, type IWebChart } from '../../../config'
-import { defaultMessages } from 'jimu-ui'
-import { Tools } from './universal'
-import WebChartSetting from './web-chart'
-import { ChartSettingSection } from './type'
-import { type ChartTypes } from 'jimu-ui/advanced/chart'
+import {
+  type IMFeatureLayerQueryParams,
+  type ImmutableArray,
+  type ImmutableObject,
+  React,
+  type UseDataSource,
+  hooks,
+} from "jimu-core";
+import {
+  SettingCollapse,
+  SettingSection,
+} from "jimu-ui/advanced/setting-components";
+import { type ChartTools, type IWebChart } from "../../../config";
+import { defaultMessages } from "jimu-ui";
+import { Tools } from "./universal";
+import WebChartSetting from "./web-chart";
+import { ChartSettingSection } from "./type";
+import { type ChartTypes } from "jimu-ui/advanced/chart";
 
 interface ChartSettingProps {
-  type: ChartTypes
-  tools: ImmutableObject<ChartTools>
-  webChart: ImmutableObject<IWebChart>
-  useDataSources: ImmutableArray<UseDataSource>
-  onToolsChange: (tools: ImmutableObject<ChartTools>) => void
-  onWebChartChange: (webChart: ImmutableObject<IWebChart>, query?: IMFeatureLayerQueryParams) => void
+  type: ChartTypes;
+  tools: ImmutableObject<ChartTools>;
+  webChart: ImmutableObject<IWebChart>;
+  useDataSources: ImmutableArray<UseDataSource>;
+  onToolsChange: (tools: ImmutableObject<ChartTools>) => void;
+  onWebChartChange: (
+    webChart: ImmutableObject<IWebChart>,
+    query?: IMFeatureLayerQueryParams
+  ) => void;
+  isParseDateEnabled: boolean; // Nhận giá trị `isParseDateEnabled` từ ChartSettings
+  minimumPeriod: string;
+  onSettingChange: (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => void;
 }
 
 const ChartSetting = (props: ChartSettingProps) => {
@@ -22,11 +41,14 @@ const ChartSetting = (props: ChartSettingProps) => {
     tools,
     webChart,
     useDataSources,
+    isParseDateEnabled,
+    minimumPeriod,
+    onSettingChange,
     onToolsChange,
-    onWebChartChange
-  } = props
-  const translate = hooks.useTranslation(defaultMessages)
-  const [section, setSection] = React.useState(ChartSettingSection.Data)
+    onWebChartChange,
+  } = props;
+  const translate = hooks.useTranslation(defaultMessages);
+  const [section, setSection] = React.useState(ChartSettingSection.Data);
 
   return (
     <>
@@ -37,20 +59,26 @@ const ChartSetting = (props: ChartSettingProps) => {
         webChart={webChart}
         useDataSources={useDataSources}
         onWebChartChange={onWebChartChange}
+        isParseDateEnabled={isParseDateEnabled}
+        minimumPeriod={minimumPeriod}
+        onSettingChange={onSettingChange}
       />
       <SettingSection>
         <SettingCollapse
-          label={translate('tools')}
-          aria-label={translate('tools')}
+          label={translate("tools")}
+          aria-label={translate("tools")}
           isOpen={section === ChartSettingSection.Tools}
-          onRequestOpen={() => { setSection(ChartSettingSection.Tools) }}
-          onRequestClose={() => { setSection(ChartSettingSection.None) }}
-        >
+          onRequestOpen={() => {
+            setSection(ChartSettingSection.Tools);
+          }}
+          onRequestClose={() => {
+            setSection(ChartSettingSection.None);
+          }}>
           <Tools type={type} tools={tools} onChange={onToolsChange} />
         </SettingCollapse>
       </SettingSection>
     </>
-  )
-}
+  );
+};
 
-export default ChartSetting
+export default ChartSetting;

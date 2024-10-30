@@ -16,6 +16,7 @@ import {
   type ChartStatisticType,
   type ChartDataSource,
   type WebChartSeries,
+  IMConfig,
 } from "../../../../../../../../config";
 import { SettingRow } from "jimu-ui/advanced/setting-components";
 import { FieldSelector, SorteSetting } from "../../../../components";
@@ -61,14 +62,16 @@ export interface ByGroupDataProps {
   supportPercentile?: boolean;
   onChange?: (
     series: ImmutableArray<WebChartSeries>,
-    seriesRelatedProps: SeriesRelatedProps,
-
-    // Setting props for Parse Date
-    settings?: ImmutableObject<{
-      isParseDateEnabled?: boolean;
-      parseType?: string;
-    }>
+    seriesRelatedProps: SeriesRelatedProps
   ) => void;
+
+  onSettingChange: (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => void;
+
+  isParseDateEnabled: boolean; // Thêm prop này
+  minimumPeriod: string;
 }
 
 const defaultChartDataSource = Immutable(
@@ -84,13 +87,20 @@ export const ByGroupData = (props: ByGroupDataProps): React.ReactElement => {
     series: propSeries,
     supportPercentile,
     onChange,
+    isParseDateEnabled,
+    minimumPeriod,
+    onSettingChange,
   } = props;
 
+  React.useEffect(() => {
+    console.log("PROPS: ", props);
+  }, [props]);
+
   const [loadingDate, setLoadingDate] = React.useState(false);
-  // State for setting
-  const [settings, setSettings] = React.useState(
-    Immutable({ isParseDateEnabled: false, parseType: "" })
-  );
+  /** State for setting */
+
+  /**---------------------- */
+
   const dataSourceId = useDataSources?.[0]?.dataSourceId;
   const objectidField = React.useMemo(
     () => getObjectIdField(dataSourceId),
@@ -167,18 +177,6 @@ export const ByGroupData = (props: ByGroupDataProps): React.ReactElement => {
   );
 
   const isDateType = categoryFieldType === JimuFieldType.Date; //  Checking Date type
-
-  /** Handle to Enable or Unenable toggle */
-  const handleSettingsChange = (key: string, value: any): void => {
-    const newSettings = settings.set(key, value); // Update settings
-    setSettings(newSettings); // Set the new settings to state
-    onChange?.(
-      propSeries,
-      { chartDataSource: propChartDataSource },
-      newSettings
-    );
-  };
-  /** ------------------------------------*/
 
   const handleCategoryFieldChange = async (
     fields: ImmutableArray<string>
@@ -394,34 +392,34 @@ export const ByGroupData = (props: ByGroupDataProps): React.ReactElement => {
           onChange={handleCategoryFieldChange}
         />
       </SettingRow>
-
-      {/* Setting Section show Parse Date options */}
+      {/* Setting Parse Date */}
       {isDateType && (
         <SettingRow label='Parse dates' flow='wrap'>
           <Switch
-            checked={settings.isParseDateEnabled}
+            checked={props.isParseDateEnabled}
             onChange={(e) =>
-              handleSettingsChange("isParseDateEnabled", e.target.checked)
+              onSettingChange({ isParseDateEnabled: e.target.checked })
             }
             aria-label='Enable Parse Date'
           />
         </SettingRow>
       )}
 
-      {/* Show setting options only if the toggle is enabled */}
-      {settings.isParseDateEnabled && isDateType && (
+      {props.isParseDateEnabled && isDateType && (
         <SettingRow label='Minimum period' flow='wrap'>
           <Select
-            value={settings.parseType}
-            onChange={(e) => handleSettingsChange("parseType", e.target.value)}
+            value={minimumPeriod}
+            onChange={(e) => onSettingChange({ parseType: e.target.value })}
             placeholder='Select parse type'
             style={{ width: "100%" }}>
-            <option value='Day'>Day</option>
+            <option value='Week'>Day</option>
             <option value='Month'>Month</option>
             <option value='Year'>Year</option>
           </Select>
         </SettingRow>
       )}
+
+      {/*-----------------------*/}
 
       <SettingRow label={translate("statistics")} flow='wrap'>
         <StatisticsSelector

@@ -19,6 +19,13 @@ interface WebChartSettingProps {
   section: ChartSettingSection;
   webChart: ImmutableObject<IWebChart>;
   useDataSources: ImmutableArray<UseDataSource>;
+  isParseDateEnabled: boolean; // Nhận giá trị `isParseDateEnabled` từ ChartSetting
+  minimumPeriod: string;
+  onSettingChange: (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => void;
+
   onSectionChange: (section: ChartSettingSection) => void;
   onWebChartChange: (
     webChart: ImmutableObject<IWebChart>,
@@ -34,6 +41,9 @@ const WebChartSetting = (props: WebChartSettingProps) => {
     onSectionChange,
     useDataSources,
     onWebChartChange,
+    isParseDateEnabled,
+    minimumPeriod,
+    onSettingChange,
   } = props;
 
   return (
@@ -47,6 +57,9 @@ const WebChartSetting = (props: WebChartSettingProps) => {
           onSectionChange={onSectionChange}
           useDataSources={useDataSources}
           onWebChartChange={onWebChartChange}
+          isParseDateEnabled={isParseDateEnabled}
+          onSettingChange={onSettingChange}
+          minimumPeriod={minimumPeriod}
         />
       )}
       {type === "pieSeries" && (

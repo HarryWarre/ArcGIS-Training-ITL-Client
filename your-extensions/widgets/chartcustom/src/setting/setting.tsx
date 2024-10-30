@@ -39,6 +39,10 @@ const Setting = (props: SettingProps): React.ReactElement => {
     label,
   } = props;
 
+  React.useEffect(() => {
+    console.log(props);
+  }, [props]);
+
   const translate = hooks.useTranslation(
     defaultMessages,
     jimuiMessages,
@@ -49,6 +53,17 @@ const Setting = (props: SettingProps): React.ReactElement => {
   const seriesType = getSeriesType(webChart?.series as any) ?? "barSeries"; // Type chart
   const outputDataSourceId = propOutputDataSources?.[0] ?? "";
   const outputDataSourceLabel = translate("outputStatistics", { name: label });
+
+  // Hàm xử lý khi có thay đổi, cập nhật lại cấu hình
+  const handleSettingChange = (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => {
+    onSettingChange({
+      id,
+      config: { ...propConfig, ...newConfig },
+    });
+  };
 
   const handleUseDataSourceChange = (useDataSources: UseDataSource[]): void => {
     const config = propConfig
@@ -136,6 +151,9 @@ const Setting = (props: SettingProps): React.ReactElement => {
           webChart={webChart}
           onToolsChange={handleToolsChange}
           onWebChartChange={handleWebChartChange}
+          isParseDateEnabled={props.config?.["isParseDateEnabled"]} // Parse Date Setting
+          minimumPeriod={props.config?.["parseType"]} // Parse Date Setting
+          onSettingChange={handleSettingChange}
         />
         {propUseDataSources?.length && (
           <OutputSourceManager

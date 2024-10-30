@@ -3,17 +3,13 @@ import { AllWidgetSettingProps } from "jimu-for-builder";
 import { DataSourceSelector } from "jimu-ui/advanced/data-source-selector";
 import { type IMConfig } from "../config";
 import {
-  TextField,
   Button,
-  Box,
-  FormHelperText,
+  Switch, // Import Switch
 } from "../../../../node_plugin/node_modules/@mui/material";
-import { color } from "jimu-ui/basic/color-picker";
 import { SettingSection } from "jimu-ui/advanced/setting-components";
-import { TextArea } from "jimu-ui";
 import AceEditor from "../../../../node_plugin/node_modules/react-ace";
 
-const { useState } = React;
+const { useState, useEffect } = React;
 
 const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
   const { config } = props;
@@ -32,6 +28,17 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
     props.onSettingChange({
       id: props.id,
       useDataSources: useDataSources,
+    });
+  };
+
+  // Hàm để cập nhật toggle
+  const handleToggleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = event.target.checked;
+
+    // Cập nhật cấu hình widget
+    props.onSettingChange({
+      id: props.id,
+      toggleEnabled: newValue, // Err do chưa override lại
     });
   };
 
@@ -55,6 +62,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 
     props.onSettingChange(config);
   };
+
   return (
     <div className='use-feature setting p-1'>
       <DataSourceSelector
@@ -69,6 +77,17 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
         widgetId={props.id}
         isMultiple={true}
       />
+
+      {/* Cài đặt toggle */}
+      <SettingSection className='p-0'>
+        <p>
+          Enable Feature:
+          <Switch
+            checked={props?.["toggleEnabled"]}
+            onChange={handleToggleChange}
+          />
+        </p>
+      </SettingSection>
 
       {/* Cài đặt JSON config cho Setting */}
       <SettingSection className='p-0'>

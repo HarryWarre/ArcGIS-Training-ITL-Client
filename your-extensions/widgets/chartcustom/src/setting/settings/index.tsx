@@ -35,6 +35,12 @@ interface ChartSettingsProps {
     webChart: ImmutableObject<IWebChart>,
     query?: IMFeatureLayerQueryParams
   ) => void;
+  isParseDateEnabled: boolean;
+  minimumPeriod: string;
+  onSettingChange: (newConfig: {
+    isParseDateEnabled?: boolean;
+    parseType?: string;
+  }) => void;
 }
 
 export const ChartSettings = (props: ChartSettingsProps) => {
@@ -44,6 +50,9 @@ export const ChartSettings = (props: ChartSettingsProps) => {
     tools,
     webChart,
     useDataSources,
+    isParseDateEnabled,
+    onSettingChange,
+    minimumPeriod,
     onTemplateChange,
     onToolsChange,
     onWebChartChange,
@@ -80,6 +89,9 @@ export const ChartSettings = (props: ChartSettingsProps) => {
               useDataSources={useDataSources}
               onToolsChange={onToolsChange}
               onWebChartChange={onWebChartChange}
+              isParseDateEnabled={isParseDateEnabled}
+              minimumPeriod={minimumPeriod}
+              onSettingChange={onSettingChange}
             />
           )}
         </>
