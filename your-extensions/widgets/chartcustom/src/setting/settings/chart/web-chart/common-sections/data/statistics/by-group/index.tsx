@@ -92,14 +92,7 @@ export const ByGroupData = (props: ByGroupDataProps): React.ReactElement => {
     onSettingChange,
   } = props;
 
-  React.useEffect(() => {
-    console.log("PROPS: ", props);
-  }, [props]);
-
   const [loadingDate, setLoadingDate] = React.useState(false);
-  /** State for setting */
-
-  /**---------------------- */
 
   const dataSourceId = useDataSources?.[0]?.dataSourceId;
   const objectidField = React.useMemo(

@@ -1,16 +1,26 @@
-import { React, type AllWidgetProps } from 'jimu-core'
-import { type IMConfig } from '../config'
-import { versionManager } from '../version-manager'
-import { ChartRuntimeStateProvider } from './state'
-import Chart from './chart'
+import { React, type AllWidgetProps } from "jimu-core";
+import { type IMConfig } from "../config";
+import { versionManager } from "../version-manager";
+import { ChartRuntimeStateProvider } from "./state";
+import Chart from "./chart";
 
 const Widget = (props: AllWidgetProps<IMConfig>): React.ReactElement => {
-  const { outputDataSources, useDataSources, config, id, enableDataAction, onInitDragHandler } = props
+  const {
+    outputDataSources,
+    useDataSources,
+    config,
+    id,
+    enableDataAction,
+    onInitDragHandler,
+  } = props;
 
-  const webChart = config?.webChart
-  const tools = config?.tools
-  const defaultTemplateType = config?._templateType
-
+  const webChart = config?.webChart;
+  const tools = config?.tools;
+  const defaultTemplateType = config?._templateType;
+  const propsParseDate = [
+    config?.["isParseDateEnabled"],
+    config?.["parseType"],
+  ];
   return (
     <div className='jimu-widget widget-chart'>
       <ChartRuntimeStateProvider>
@@ -23,12 +33,13 @@ const Widget = (props: AllWidgetProps<IMConfig>): React.ReactElement => {
           onInitDragHandler={onInitDragHandler}
           defaultTemplateType={defaultTemplateType}
           outputDataSourceId={outputDataSources?.[0]}
+          propsParseDate={propsParseDate}
         />
       </ChartRuntimeStateProvider>
     </div>
-  )
-}
+  );
+};
 
-Widget.versionManager = versionManager
+Widget.versionManager = versionManager;
 
-export default Widget
+export default Widget;

@@ -120,10 +120,6 @@ const Setting = (props: SettingProps): React.ReactElement => {
     onSettingChange({ id, config: propConfig.set("tools", tools) });
   };
 
-  //console.log(seriesType); // return barSeries
-  //console.log(template); //return bar
-  //console.log(webChart); // return Object has { id: bar, type: chart, and info about the setting chart (SettingChartSection)}
-
   return (
     <div className='widget-setting-chart jimu-widget-setting'>
       <div className='w-100 h-100'>

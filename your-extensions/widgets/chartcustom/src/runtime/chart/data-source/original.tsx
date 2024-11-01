@@ -1,34 +1,46 @@
-import { React, type DataSource, DataSourceComponent, type ImmutableObject, type UseDataSource, type DataSourceStatus } from 'jimu-core'
-import { useChartRuntimeDispatch, useChartRuntimeState } from '../../state'
+import {
+  React,
+  type DataSource,
+  DataSourceComponent,
+  type ImmutableObject,
+  type UseDataSource,
+  type DataSourceStatus,
+} from "jimu-core";
+import { useChartRuntimeDispatch, useChartRuntimeState } from "../../state";
 
 interface OriginDataSourceManagerProps {
-  widgetId: string
-  useDataSource: ImmutableObject<UseDataSource>
-  onQueryRequired?: () => void
-  onDataSourceStatusChange?: (status: DataSourceStatus, preStatus?: DataSourceStatus) => void
+  widgetId: string;
+  useDataSource: ImmutableObject<UseDataSource>;
+  onQueryRequired?: () => void;
+  onDataSourceStatusChange?: (
+    status: DataSourceStatus,
+    preStatus?: DataSourceStatus
+  ) => void;
 }
 
 const OriginDataSourceManager = (props: OriginDataSourceManagerProps) => {
-  const { widgetId, useDataSource, onQueryRequired, onDataSourceStatusChange } = props
-  const { queryVersion } = useChartRuntimeState()
-  const dispatch = useChartRuntimeDispatch()
+  const { widgetId, useDataSource, onQueryRequired, onDataSourceStatusChange } =
+    props;
+  const { queryVersion } = useChartRuntimeState();
+  const dispatch = useChartRuntimeDispatch();
 
   const handleCreated = (dataSouce: DataSource) => {
-    dispatch({ type: 'SET_DATA_SOURCE', value: dataSouce })
-  }
+    dispatch({ type: "SET_DATA_SOURCE", value: dataSouce });
+  };
 
   const handleQueryRequired = () => {
-    dispatch({ type: 'SET_QUERY_VERSION', value: queryVersion + 1 })
-    onQueryRequired?.()
-  }
+    dispatch({ type: "SET_QUERY_VERSION", value: queryVersion + 1 });
+    onQueryRequired?.();
+  };
 
-  return <DataSourceComponent
-    widgetId={widgetId}
-    useDataSource={useDataSource}
-    onDataSourceCreated={handleCreated}
-    onQueryRequired={handleQueryRequired}
-    onDataSourceStatusChange={onDataSourceStatusChange}
-  />
-}
+  return (
+    <DataSourceComponent
+      widgetId={widgetId}
+      useDataSource={useDataSource}
+      onDataSourceCreated={handleCreated}
+      onQueryRequired={handleQueryRequired}
+      onDataSourceStatusChange={onDataSourceStatusChange}></DataSourceComponent>
+  );
+};
 
-export default OriginDataSourceManager
+export default OriginDataSourceManager;
