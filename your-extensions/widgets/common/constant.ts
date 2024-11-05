@@ -38,3 +38,13 @@ export const prioritizedFieldsThuyDai = [
   "TINHTRANG",
   "DONVICAPNHAT",
 ];
+
+export const BASE_URL_Server =
+  "https://cloud.intelli.com.vn/server/rest/services/Devonly/QUANLYTAISAN_GISCHOLON_V1/FeatureServer";
+
+// OBJECT ID
+export const layerIds = {
+  dma: 26,
+  dhkh: 1,
+  thuydai: 8,
+};

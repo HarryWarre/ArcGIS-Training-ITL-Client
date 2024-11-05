@@ -27,6 +27,7 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import DMA_Table from "../components/table";
 import { getJimuMapView } from "../../../common/fucntion-map";
+import { queryDMA, _getFeatureLayerDataSource } from "./function";
 import {
   dmaQueryAtribute,
   delayTime,
@@ -104,6 +105,7 @@ const Widget = (props: AllWidgetProps<any>) => {
   useEffect(() => {
     if (DMARef.current) {
       getDMAData(DMARef.current);
+      getDMADS();
     }
 
     getJMapview();
@@ -232,7 +234,7 @@ const Widget = (props: AllWidgetProps<any>) => {
         page: page,
         pageSize: pageSize,
       });
-
+      await queryDMA();
       setDataDMA(countTotal);
     }
   };
@@ -513,6 +515,16 @@ const Widget = (props: AllWidgetProps<any>) => {
       }
     }
   };
+
+  async function getDMADS() {
+    const dmaDS = await (
+      _getFeatureLayerDataSource(
+        props.useDataSources?.[0]?.dataSourceId // get datasourceid of layer
+      ) as FeatureLayerDataSource
+    ).createJSAPILayerByDataSource();
+    // Xử lý dmaDS theo nhu cầu của bạn
+    console.log(dmaDS); // => Feature Layer
+  }
 
   return (
     <>

@@ -1,5 +1,12 @@
+import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 import Graphic from "esri/Graphic";
-import { DataRecord, FeatureLayerQueryParams } from "jimu-core";
+import {
+  DataRecord,
+  DataSourceManager,
+  FeatureLayerDataSource,
+  FeatureLayerQueryParams,
+} from "jimu-core";
+import { BASE_URL_Server, layerIds } from "../../../common/constant";
 
 export async function blinkPolygon(
   jimuMapView,
@@ -62,3 +69,35 @@ export const getDHKHIDsInGeometry = async (
     return [];
   }
 };
+
+// Query DMA by url
+export const queryDMA = async () => {
+  try {
+    const dmaURL = `${BASE_URL_Server}/${layerIds.dma}`; // url
+
+    const DMALayer: FeatureLayer = createFeatureLayer(dmaURL);
+
+    const queryParams = DMALayer.createQuery();
+
+    queryParams.where = `1 = 1`;
+
+    const results = await DMALayer.queryFeatures(queryParams);
+
+    const mappingResults = results.features.map((f) => f.attributes);
+
+    console.log(mappingResults);
+    return results;
+  } catch (error) {}
+};
+const createFeatureLayer = (url) => {
+  return new FeatureLayer({
+    url: url,
+  });
+};
+// convert datasource thành FeatureLayer
+
+export function _getFeatureLayerDataSource(dataSourceId: string) {
+  return DataSourceManager.getInstance().getDataSource(dataSourceId) as
+    | FeatureLayerDataSource
+    | undefined;
+}
