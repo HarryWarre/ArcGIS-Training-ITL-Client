@@ -12,6 +12,8 @@ import {
   hooks,
   getAppStore,
   lodash,
+  QueryParams,
+  DataRecord,
 } from "jimu-core";
 import { useChartRuntimeDispatch, useChartRuntimeState } from "../../state";
 import { type IWebChart } from "../../../config";
@@ -72,10 +74,12 @@ const OutputSourceManager = (props: OutputSourceManagerProps) => {
 
   React.useEffect(() => {
     if (!isDataSourceValid(outputDataSource) || !records) return;
+
     outputDataSource.setSourceRecords(records);
     outputDataSource.setStatus(DataSourceStatus.Unloaded);
     outputDataSource.setCountStatus(DataSourceStatus.Unloaded);
     // eslint-disable-next-line react-hooks/exhaustive-deps
+    // console.log(outputDataSource); // Ouput Datasource, chứa record
   }, [outputDataSource, records]);
 
   const useDataSource: ImmutableObject<UseDataSource> = React.useMemo(() => {
@@ -87,11 +91,13 @@ const OutputSourceManager = (props: OutputSourceManagerProps) => {
     }
   }, [dataSourceId]);
 
-  const handleCreated = (
+  const handleCreated = async (
     outputDataSource: FeatureLayerDataSource | SceneLayerDataSource
   ) => {
-    syncOriginDsInfo(outputDataSource);
-    dispatch({ type: "SET_OUTPUT_DATA_SOURCE", value: outputDataSource });
+    syncOriginDsInfo(outputDataSource); // Đồng bộ để lấy output ds
+    console.log(outputDataSource);
+
+    dispatch({ type: "SET_OUTPUT_DATA_SOURCE", value: outputDataSource }); // Set output datasource
   };
 
   const handleSchemaChange = () => {

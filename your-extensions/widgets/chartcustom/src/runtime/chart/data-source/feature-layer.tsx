@@ -45,9 +45,10 @@ const FeatureLayerDataSourceManager = (
     onSplitValuesChange,
     onSchemaChange,
   } = props;
-
   const dispatch = useChartRuntimeDispatch();
   const { queryVersion, dataSource, outputDataSource } = useChartRuntimeState();
+  // console.log(outputDataSource);
+
   const [splitByValues, setSplitByValues] = React.useState<{
     [field: string]: Array<string | number>;
   }>();
@@ -92,8 +93,10 @@ const FeatureLayerDataSourceManager = (
         seriesRef.current,
         splitByValues[splitByFieldRef.current]
       );
+
       let dsJson =
         getAppStore().getState()?.appConfig.dataSources?.[outputDataSourceId];
+
       if (!dsJson) {
         console.error(
           `The output data source of ${dataSourceId} does not exist`
@@ -102,6 +105,7 @@ const FeatureLayerDataSourceManager = (
       }
       if (lodash.isDeepEqual(schema, dsJson.schema.asMutable({ deep: true })))
         return;
+
       dsJson = dsJson.set("schema", schema);
       updateDataSourceJson(outputDataSourceId, dsJson);
       onSplitValuesChangeRef.current(splitByValues);

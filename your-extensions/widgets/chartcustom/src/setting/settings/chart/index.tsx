@@ -47,6 +47,7 @@ const ChartSetting = (props: ChartSettingProps) => {
     onToolsChange,
     onWebChartChange,
   } = props;
+
   const translate = hooks.useTranslation(defaultMessages);
   const [section, setSection] = React.useState(ChartSettingSection.Data);
 

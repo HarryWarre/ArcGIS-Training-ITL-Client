@@ -62,8 +62,8 @@ chunks
 layout
 /jest-systemjs-transformer.js
 /lerna.json
-/package.json
-/package-lock.json
+# /package.json
+# /package-lock.json
 /webpack.config.js
 /.eslintignore
 /.eslintrc.js

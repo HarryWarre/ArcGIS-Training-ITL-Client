@@ -131,15 +131,6 @@ const Widget = (props: AllWidgetProps<any>) => {
     }
   }, [mapingFieldsDHKH, mapingFieldsThuyDai]);
 
-  useEffect(() => {
-    if (codeFieldsDHKH) {
-      console.log(codeFieldsDHKH[0]);
-    }
-    if (codeFieldsThuyDai) {
-      console.log(codeFieldsThuyDai[0]);
-    }
-  }, [codeFieldsDHKH, codeFieldsThuyDai]);
-
   const getJMapview = async () => {
     setjMapView(await getJimuMapView(mapWidgetId, _viewManager));
   };

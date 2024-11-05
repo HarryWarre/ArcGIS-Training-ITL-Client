@@ -12,14 +12,14 @@ import {
   defaultMessages as jimucoreDefaultMessages,
   DataSourceStatus,
   DataSourceManager,
-  hooks
-} from 'jimu-core'
-import { defaultMessages as jimuDefaultMessages } from 'jimu-ui'
-import { type ChartTypes, getSeriesType } from 'jimu-ui/advanced/chart'
-import { type ChartDataSource, type IWebChart } from '../../../config'
-import { isSerialSeries } from '../../../utils/default'
-import { type RecordsStatus } from '../../state'
-import defaultMessages from '../../translations/default'
+  hooks,
+} from "jimu-core";
+import { defaultMessages as jimuDefaultMessages } from "jimu-ui";
+import { type ChartTypes, getSeriesType } from "jimu-ui/advanced/chart";
+import { type ChartDataSource, type IWebChart } from "../../../config";
+import { isSerialSeries } from "../../../utils/default";
+import { type RecordsStatus } from "../../state";
+import defaultMessages from "../../translations/default";
 
 /**
  *  Get the warning message translation.
@@ -32,34 +32,34 @@ export const getWarningMessageTranslation = (
   sourceStatus: RecordsStatus,
   isSelectionEmpty?: boolean
 ): string => {
-  let translation = ''
+  let translation = "";
   if (isSelectionEmpty) {
-    translation = 'dataEmptyTip'
+    translation = "dataEmptyTip";
   } else {
-    if (sourceStatus === 'exceed') {
+    if (sourceStatus === "exceed") {
       if (isSerialSeries(type)) {
-        if (type === 'lineSeries') {
-          translation = 'lineLimitation'
+        if (type === "lineSeries") {
+          translation = "lineLimitation";
         } else {
           if (seriesLength === 1) {
-            translation = 'bar1SeriesLimitation'
+            translation = "bar1SeriesLimitation";
           } else if (seriesLength === 2) {
-            translation = 'bar2SeriesLimitation'
+            translation = "bar2SeriesLimitation";
           } else if (seriesLength > 2) {
-            translation = 'bar3SeriesLimitation'
+            translation = "bar3SeriesLimitation";
           }
         }
-      } else if (type === 'pieSeries') {
-        translation = 'pieLimitation'
+      } else if (type === "pieSeries") {
+        translation = "pieLimitation";
       }
-    } else if (sourceStatus === 'empty') {
-      translation = 'dataEmptyTip'
-    } else if (sourceStatus === 'error') {
-      translation = 'widgetLoadError'
+    } else if (sourceStatus === "empty") {
+      translation = "dataEmptyTip";
+    } else if (sourceStatus === "error") {
+      translation = "widgetLoadError";
     }
   }
-  return translation
-}
+  return translation;
+};
 
 /**
  * Get the warning message translation of not-ready data source.
@@ -70,17 +70,17 @@ export const getNotReadyTranslation = (
   useDataSource: ImmutableObject<UseDataSource>,
   dataSource: DataSource
 ): [string, { [key: string]: any }] => {
-  if (!useDataSource || !dataSource) return null
-  const labels = getDataSourceLabels(useDataSource, dataSource)
+  if (!useDataSource || !dataSource) return null;
+  const labels = getDataSourceLabels(useDataSource, dataSource);
   const translation = [
-    'outputDataIsNotGenerated',
+    "outputDataIsNotGenerated",
     {
       outputDsLabel: labels.dataSourceLabel,
-      sourceWidgetName: labels.widgetLabel
-    }
-  ] as [string, { [key: string]: any }]
-  return translation
-}
+      sourceWidgetName: labels.widgetLabel,
+    },
+  ] as [string, { [key: string]: any }];
+  return translation;
+};
 
 /**
  * Get the label of the widget that outputs the data source
@@ -89,12 +89,12 @@ export const getNotReadyTranslation = (
 export const getWidgetLabelFromUseDataSource = (
   useDataSource: ImmutableObject<UseDataSource>
 ) => {
-  const widgetId = appConfigUtils.getWidgetIdByOutputDataSource(useDataSource)
+  const widgetId = appConfigUtils.getWidgetIdByOutputDataSource(useDataSource);
   const widgetLabel =
-    getAppStore().getState()?.appConfig.widgets?.[widgetId]?.label
+    getAppStore().getState()?.appConfig.widgets?.[widgetId]?.label;
 
-  return widgetLabel
-}
+  return widgetLabel;
+};
 /**
  * Get the label of the data source and the label of the widget that outputs the data source
  * @param useDataSource
@@ -104,15 +104,15 @@ export const getWidgetLabelFromUseDataSource = (
 export const getDataSourceLabels = (
   useDataSource: ImmutableObject<UseDataSource>,
   dataSource: DataSource
-): { dataSourceLabel: string, widgetLabel: string } => {
-  const dataSourceLabel = dataSource?.getLabel()
-  const widgetLabel = getWidgetLabelFromUseDataSource(useDataSource)
-  return { dataSourceLabel, widgetLabel }
-}
+): { dataSourceLabel: string; widgetLabel: string } => {
+  const dataSourceLabel = dataSource?.getLabel();
+  const widgetLabel = getWidgetLabelFromUseDataSource(useDataSource);
+  return { dataSourceLabel, widgetLabel };
+};
 
 export interface SourceRecords {
-  version: number
-  records: DataRecord[]
+  version: number;
+  records: DataRecord[];
 }
 
 /**
@@ -120,16 +120,17 @@ export interface SourceRecords {
  * @param dataSource
  */
 export const useSourceRecords = (dataSource: DataSource): SourceRecords => {
-  const dataSourceId = dataSource?.id
+  const dataSourceId = dataSource?.id;
   const sourceVersion = ReactRedux.useSelector(
     (state: IMState) => state.dataSourcesInfo?.[dataSourceId]?.sourceVersion
-  )
+  );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   return React.useMemo(() => {
-    const records = dataSource?.getSourceRecords() ?? ([] as DataRecord[])
-    return { records, version: sourceVersion }
-  }, [dataSource, sourceVersion])
-}
+    const records = dataSource?.getSourceRecords() ?? ([] as DataRecord[]);
+
+    return { records, version: sourceVersion };
+  }, [dataSource, sourceVersion]);
+};
 
 /**
  * Check whether the query in chart data source is valid.
@@ -139,25 +140,27 @@ export const isValidQuery = (
   type: ChartTypes,
   query: IMFeatureLayerQueryParams
 ): boolean => {
-  if (isSerialSeries(type) || type === 'pieSeries') {
+  if (isSerialSeries(type) || type === "pieSeries") {
     if (query.outFields) {
-      return !!(query?.outFields?.[0] && query?.groupByFieldsForStatistics?.[0])
+      return !!(
+        query?.outFields?.[0] && query?.groupByFieldsForStatistics?.[0]
+      );
     } else {
       if (query?.groupByFieldsForStatistics) {
         return (
           !!query?.groupByFieldsForStatistics?.[0] &&
           !!query?.outStatistics?.[0]?.onStatisticField
-        )
+        );
       } else {
-        return !!query?.outStatistics?.[0]?.onStatisticField
+        return !!query?.outStatistics?.[0]?.onStatisticField;
       }
     }
-  } else if (type === 'scatterSeries') {
-    return !!query?.outFields?.[1]
-  } else if (type === 'histogramSeries') {
-    return !!query?.outFields?.[0]
+  } else if (type === "scatterSeries") {
+    return !!query?.outFields?.[1];
+  } else if (type === "histogramSeries") {
+    return !!query?.outFields?.[0];
   }
-}
+};
 
 /**
  * Check whether the chart data source is valid.
@@ -167,8 +170,8 @@ export const isValidIWebChartDataSource = (
   type: ChartTypes,
   dataSource: ImmutableObject<ChartDataSource>
 ): boolean => {
-  return isValidQuery(type, dataSource?.query)
-}
+  return isValidQuery(type, dataSource?.query);
+};
 
 /**
  * Check whether the web chart config is valid.
@@ -178,10 +181,10 @@ export const isValidIWebChartDataSource = (
 export const isWebChartValid = (
   webChart: ImmutableObject<IWebChart>
 ): boolean => {
-  const type = getSeriesType(webChart?.series as any)
-  const sourceValid = isValidIWebChartDataSource(type, webChart?.dataSource)
-  return sourceValid
-}
+  const type = getSeriesType(webChart?.series as any);
+  const sourceValid = isValidIWebChartDataSource(type, webChart?.dataSource);
+  return sourceValid;
+};
 
 export const useWarningMessage = (
   chartType: ChartTypes,
@@ -190,55 +193,55 @@ export const useWarningMessage = (
   recordsStatus: RecordsStatus,
   seriesLength: number,
   isSelectionEmpty?: boolean
-): ['basic' | 'tooltip', string] => {
-  const [type, setType] = React.useState<'basic' | 'tooltip'>('tooltip')
-  const [message, setMessage] = React.useState('')
+): ["basic" | "tooltip", string] => {
+  const [type, setType] = React.useState<"basic" | "tooltip">("tooltip");
+  const [message, setMessage] = React.useState("");
   const originSourceStatus = ReactRedux.useSelector(
     (state: IMState) =>
       state.dataSourcesInfo?.[useDataSource?.dataSourceId]?.status
-  )
+  );
   const instanceStatus = ReactRedux.useSelector(
     (state: IMState) =>
       state.dataSourcesInfo?.[useDataSource?.dataSourceId]?.instanceStatus
-  )
+  );
   const translate = hooks.useTranslation(
     jimucoreDefaultMessages,
     jimuDefaultMessages,
     defaultMessages
-  )
+  );
 
   React.useEffect(() => {
     if (instanceStatus === DataSourceStatus.CreateError) {
-      setType('basic')
-      const message = translate('dataSourceCreateError')
-      setMessage(message)
+      setType("basic");
+      const message = translate("dataSourceCreateError");
+      setMessage(message);
     } else {
-      setType(recordsStatus === 'exceed' ? 'basic' : 'tooltip')
+      setType(recordsStatus === "exceed" ? "basic" : "tooltip");
       if (
         originSourceStatus === DataSourceStatus.NotReady &&
         instanceStatus === DataSourceStatus.Created
       ) {
         const dataSource = DataSourceManager.getInstance().getDataSource(
           useDataSource.dataSourceId
-        )
-        const translation = getNotReadyTranslation(useDataSource, dataSource)
+        );
+        const translation = getNotReadyTranslation(useDataSource, dataSource);
         if (translation) {
-          const message = translate(...translation)
-          setMessage(message)
+          const message = translate(...translation);
+          setMessage(message);
         }
       } else {
         if (!webChartValid) {
-          setMessage('')
+          setMessage("");
         } else {
           const translation = getWarningMessageTranslation(
             chartType,
             seriesLength,
             recordsStatus,
             isSelectionEmpty
-          )
+          );
           if (translation) {
-            const message = translate(translation)
-            setMessage(message)
+            const message = translate(translation);
+            setMessage(message);
           }
         }
       }
@@ -250,8 +253,8 @@ export const useWarningMessage = (
     chartType,
     webChartValid,
     recordsStatus,
-    isSelectionEmpty
-  ])
+    isSelectionEmpty,
+  ]);
 
-  return [type, message]
-}
+  return [type, message];
+};

@@ -102,6 +102,7 @@ function WithFeatureLayerChart(
   const id = widgetId + "-" + (propWebChart?.id ?? "chart");
   const dispatch = useChartRuntimeDispatch();
   const { outputDataSource, dataSource, queryVersion } = useChartRuntimeState();
+
   const dataSourceId = useDataSource?.dataSourceId;
   const layer = useDataSourceFeatureLayer(dataSourceId);
   const [version, setVersion] = React.useState(0);
@@ -146,11 +147,13 @@ function WithFeatureLayerChart(
   );
 
   const webMapWebChart = React.useMemo(() => {
+    // Setting chart
     let query = propWebChart.dataSource?.query;
     if (query) {
       query = query.set("pageSize", num);
     }
     const series = normalizeSeries(propWebChart.series, query);
+
     return propWebChart
       .set("version", WebChartCurrentVersion)
       .without("dataSource")
@@ -209,7 +212,7 @@ function WithFeatureLayerChart(
   const handleDataProcessComplete = hooks.useEventCallback((e) => {
     const dataItems = getDataItems(type, e.detail);
     const records = createRecordsFromChartData(dataItems, outputDataSource);
-    console.log(records);
+
     dispatch({ type: "SET_RECORDS", value: records });
   });
 

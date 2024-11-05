@@ -85,7 +85,7 @@ export const queryDMA = async () => {
 
     const mappingResults = results.features.map((f) => f.attributes);
 
-    console.log(mappingResults);
+    // console.log(mappingResults);
     return results;
   } catch (error) {}
 };

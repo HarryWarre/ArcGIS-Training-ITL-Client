@@ -1,13 +1,26 @@
-import { type DataSource, DataSourceComponent, Immutable, type ImmutableObject, React, type UseDataSource, type FeatureLayerDataSource, type SceneLayerDataSource, getAppStore, hooks, type DataSourceJson, type IMDataSourceSchema } from 'jimu-core'
-import { defaultMessages as jimuiMessages } from 'jimu-ui'
-import { createInitOutputDataSource, getSchemaOriginFields } from './utils'
+import {
+  type DataSource,
+  DataSourceComponent,
+  Immutable,
+  type ImmutableObject,
+  React,
+  type UseDataSource,
+  type FeatureLayerDataSource,
+  type SceneLayerDataSource,
+  getAppStore,
+  hooks,
+  type DataSourceJson,
+  type IMDataSourceSchema,
+} from "jimu-core";
+import { defaultMessages as jimuiMessages } from "jimu-ui";
+import { createInitOutputDataSource, getSchemaOriginFields } from "./utils";
 
 interface OutputSourceManagerProps {
-  widgetId: string
-  dataSourceId: string
-  originalUseDataSource: ImmutableObject<UseDataSource>
-  onCreate?: (dataSourceJson: DataSourceJson) => void
-  onFieldsChange?: (fields: string[]) => void
+  widgetId: string;
+  dataSourceId: string;
+  originalUseDataSource: ImmutableObject<UseDataSource>;
+  onCreate?: (dataSourceJson: DataSourceJson) => void;
+  onFieldsChange?: (fields: string[]) => void;
 }
 
 const OutputSourceManager = (props: OutputSourceManagerProps) => {
@@ -16,51 +29,61 @@ const OutputSourceManager = (props: OutputSourceManagerProps) => {
     dataSourceId,
     originalUseDataSource,
     onCreate: propOnCreate,
-    onFieldsChange
-  } = props
+    onFieldsChange,
+  } = props;
 
-  const translate = hooks.useTranslation(jimuiMessages)
+  const translate = hooks.useTranslation(jimuiMessages);
 
-  const [dataSource, setDataSource] = React.useState<DataSource>(null)
+  const [dataSource, setDataSource] = React.useState<DataSource>(null);
 
-  const onCreate = hooks.useLatest(propOnCreate)
+  const onCreate = hooks.useLatest(propOnCreate);
 
   React.useEffect(() => {
     if (!dataSourceId) {
-      const outputId = widgetId + '_ouput'
-      const widegtLabel = getAppStore().getState().appStateInBuilder.appConfig.widgets[widgetId].label
-      const label = translate('outputStatistics', { name: widegtLabel })
+      const outputId = widgetId + "_ouput";
+      const widegtLabel =
+        getAppStore().getState().appStateInBuilder.appConfig.widgets[widgetId]
+          .label;
+      const label = translate("outputStatistics", { name: widegtLabel });
       //create the corresponding output data source after use data source changes
-      const outputDataSource = createInitOutputDataSource(outputId, label, originalUseDataSource?.asMutable({ deep: true }))
-      onCreate.current?.(outputDataSource)
+      const outputDataSource = createInitOutputDataSource(
+        outputId,
+        label,
+        originalUseDataSource?.asMutable({ deep: true })
+      );
+      onCreate.current?.(outputDataSource);
     }
-  }, [dataSourceId, onCreate, originalUseDataSource, translate, widgetId])
+  }, [dataSourceId, onCreate, originalUseDataSource, translate, widgetId]);
 
   const useDataSource: ImmutableObject<UseDataSource> = React.useMemo(() => {
     if (dataSourceId) {
       return Immutable({
         dataSourceId: dataSourceId,
-        mainDataSourceId: dataSourceId
-      })
+        mainDataSourceId: dataSourceId,
+      });
     }
-  }, [dataSourceId])
+  }, [dataSourceId]);
 
   const handleSchemaChange = (schema: IMDataSourceSchema) => {
-    if (!dataSource) return
-    const fields = getSchemaOriginFields(schema)
-    onFieldsChange?.(fields)
-  }
+    if (!dataSource) return;
+    const fields = getSchemaOriginFields(schema);
+    onFieldsChange?.(fields);
+  };
 
-  const handleCreated = (dataSource: FeatureLayerDataSource | SceneLayerDataSource) => {
-    setDataSource(dataSource)
-  }
+  const handleCreated = (
+    dataSource: FeatureLayerDataSource | SceneLayerDataSource
+  ) => {
+    setDataSource(dataSource);
+  };
 
-  return <DataSourceComponent
-    widgetId={widgetId}
-    useDataSource={useDataSource}
-    onDataSourceCreated={handleCreated}
-    onDataSourceSchemaChange={handleSchemaChange}
-  />
-}
+  return (
+    <DataSourceComponent
+      widgetId={widgetId}
+      useDataSource={useDataSource}
+      onDataSourceCreated={handleCreated}
+      onDataSourceSchemaChange={handleSchemaChange}
+    />
+  );
+};
 
-export default OutputSourceManager
+export default OutputSourceManager;

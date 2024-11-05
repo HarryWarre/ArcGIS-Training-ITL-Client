@@ -5,7 +5,7 @@ import {
   type DataRecord,
 } from "jimu-core";
 import { type UnprivilegedChart } from "jimu-ui/advanced/chart";
-
+// Quản lý state cho bieur đồ ứng dụng, cho phép các component khác truy cập và cập nhaaj trạng thái thông qua context và hooks.
 export type RecordsStatus =
   | "none"
   | "error"

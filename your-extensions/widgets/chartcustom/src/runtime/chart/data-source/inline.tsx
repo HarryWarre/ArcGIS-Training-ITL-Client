@@ -1,21 +1,31 @@
-import { React, type ImmutableObject, type UseDataSource, DataSourceStatus } from 'jimu-core'
-import { type ChartElementLimit, getSeriesType } from 'jimu-ui/advanced/chart'
-import { CategoryType, type IWebChart } from '../../../config'
-import { ChartLimits } from '../../../constants'
-import { getCategoryType } from '../../../utils/common/serial'
-import { isSerialSeries } from '../../../utils/default'
-import { useChartRuntimeDispatch, useChartRuntimeState } from '../../state'
-import OriginDataSourceManager from './original'
-import OutputSourceManager from './output'
-import useFetchRecords from './use-fetch-records'
-import { convertByFieldRecords, getInlineRecordslimited, isDataSourceValid } from './utils'
+import {
+  React,
+  type ImmutableObject,
+  type UseDataSource,
+  DataSourceStatus,
+} from "jimu-core";
+import { type ChartElementLimit, getSeriesType } from "jimu-ui/advanced/chart";
+import { CategoryType, type IWebChart } from "../../../config";
+import { ChartLimits } from "../../../constants";
+import { getCategoryType } from "../../../utils/common/serial";
+import { isSerialSeries } from "../../../utils/default";
+import { useChartRuntimeDispatch, useChartRuntimeState } from "../../state";
+import OriginDataSourceManager from "./original";
+import OutputSourceManager from "./output";
+import useFetchRecords from "./use-fetch-records";
+import {
+  convertByFieldRecords,
+  getInlineRecordslimited,
+  isDataSourceValid,
+} from "./utils";
+import { useEffect } from "react";
 
 interface InlineDataSourceManagerProps {
-  widgetId: string
-  webChart: ImmutableObject<IWebChart>
-  outputDataSourceId: string
-  useDataSource: ImmutableObject<UseDataSource>
-  chartLimits?: Partial<ChartElementLimit>
+  widgetId: string;
+  webChart: ImmutableObject<IWebChart>;
+  outputDataSourceId: string;
+  useDataSource: ImmutableObject<UseDataSource>;
+  chartLimits?: Partial<ChartElementLimit>;
 }
 
 const InlineDataSourceManager = (props: InlineDataSourceManagerProps) => {
@@ -24,37 +34,46 @@ const InlineDataSourceManager = (props: InlineDataSourceManagerProps) => {
     webChart,
     outputDataSourceId,
     useDataSource,
-    chartLimits = ChartLimits
-  } = props
+    chartLimits = ChartLimits,
+  } = props;
+  const type = getSeriesType(webChart?.series as any);
+  const query = webChart?.dataSource?.query;
+  const recordsLimited = getInlineRecordslimited(webChart?.series, chartLimits);
 
-  const type = getSeriesType(webChart?.series as any)
-  const query = webChart?.dataSource?.query
-  const recordsLimited = getInlineRecordslimited(webChart?.series, chartLimits)
+  const dispatch = useChartRuntimeDispatch();
+  const { queryVersion, outputDataSource } = useChartRuntimeState();
 
-  const dispatch = useChartRuntimeDispatch()
-  const { queryVersion, outputDataSource } = useChartRuntimeState()
-
-  const categoryType = getCategoryType(query)
+  const categoryType = getCategoryType(query);
   const callback = React.useMemo(() => {
-    if (categoryType !== CategoryType.ByField || (!isSerialSeries(type) && type !== 'pieSeries')) return null
-    return convertByFieldRecords
-  }, [categoryType, type])
+    if (
+      categoryType !== CategoryType.ByField ||
+      (!isSerialSeries(type) && type !== "pieSeries")
+    )
+      return null;
+    return convertByFieldRecords;
+  }, [categoryType, type]);
 
-  useFetchRecords(type, query, queryVersion, recordsLimited, callback)
+  useFetchRecords(type, query, queryVersion, recordsLimited, callback);
 
-  const handleDataSourceStatusChange = (status: DataSourceStatus, preStatus?: DataSourceStatus) => {
+  const handleDataSourceStatusChange = (
+    status: DataSourceStatus,
+    preStatus?: DataSourceStatus
+  ) => {
     if (isDataSourceValid(outputDataSource)) {
       if (status === DataSourceStatus.NotReady && status !== preStatus) {
-        outputDataSource.setStatus(DataSourceStatus.NotReady)
-        outputDataSource.setCountStatus(DataSourceStatus.NotReady)
-        dispatch({ type: 'SET_RECORDS', value: undefined })
-        dispatch({ type: 'SET_RECORDS_STATUS', value: 'none' })
+        outputDataSource.setStatus(DataSourceStatus.NotReady);
+        outputDataSource.setCountStatus(DataSourceStatus.NotReady);
+        dispatch({ type: "SET_RECORDS", value: undefined });
+        dispatch({ type: "SET_RECORDS_STATUS", value: "none" });
       }
-      if (status === DataSourceStatus.Unloaded && preStatus === DataSourceStatus.NotReady) {
-        dispatch({ type: 'SET_QUERY_VERSION', value: queryVersion + 1 })
+      if (
+        status === DataSourceStatus.Unloaded &&
+        preStatus === DataSourceStatus.NotReady
+      ) {
+        dispatch({ type: "SET_QUERY_VERSION", value: queryVersion + 1 });
       }
     }
-  }
+  };
 
   return (
     <>
@@ -67,9 +86,10 @@ const InlineDataSourceManager = (props: InlineDataSourceManagerProps) => {
         webChart={webChart}
         widgetId={widgetId}
         dataSourceId={outputDataSourceId}
-        originalDataSourceId={useDataSource?.dataSourceId} />
+        originalDataSourceId={useDataSource?.dataSourceId}
+      />
     </>
-  )
-}
+  );
+};
 
-export default InlineDataSourceManager
+export default InlineDataSourceManager;

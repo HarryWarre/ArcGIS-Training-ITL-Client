@@ -183,6 +183,8 @@ const WebFeatureLayerChart = (props: WebFeatureLayerChartPorps) => {
     onInitDragHandler,
     propsParseDate,
   } = props;
+  // console.log(propWebChart); // Thông số Web Chart
+
   const { chart } = useChartRuntimeState();
   const dataSourceId = useDataSource?.dataSourceId;
   const splitByField = getSplitByField(
@@ -197,6 +199,7 @@ const WebFeatureLayerChart = (props: WebFeatureLayerChartPorps) => {
   const splitByFieldRef = hooks.useLatest(splitByField);
 
   const series = React.useMemo(() => {
+    //Series: Phân loại các loại dữ liệu theo Split by
     if (splitByFieldRef.current && splitByValues?.[splitByFieldRef.current]) {
       const splitByFieldType = getFieldType(
         splitByFieldRef.current,
@@ -209,6 +212,7 @@ const WebFeatureLayerChart = (props: WebFeatureLayerChartPorps) => {
         splitByFieldType,
         splitByValues[splitByFieldRef.current]
       );
+
       return Immutable(seriesValues);
     } else {
       const seriesValues = normalizeRuntimeSplitBySeries(propWebChart?.series);

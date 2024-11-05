@@ -218,12 +218,17 @@ export const ChartComponents = React.forwardRef(
       hideEmptySeriesInLegend = true,
       ...others
     } = props;
+    // console.log(props);
 
     const chartRef = React.useRef<UnprivilegedChart>(null);
+    // console.log(chartRef);
+
     const handleRef = hooks.useForkRef(ref, chartRef);
+
     const seriesType = getSeriesType(props.webMapWebChart?.series as any);
 
     const globalOptions = {
+      // Setting
       autoDisposeChart,
       enableResponsiveFeatures,
       queueChartCreation,

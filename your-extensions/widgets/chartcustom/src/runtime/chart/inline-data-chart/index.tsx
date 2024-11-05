@@ -62,6 +62,7 @@ const WebInlineDataChart = (props: WebInlineDataChartPorps) => {
   } = props;
 
   const { recordsStatus, records } = useChartRuntimeState();
+
   const type = getSeriesType(webChart?.series as any);
   const showTools =
     propTools?.cursorEnable || !!propTools?.filter || enableDataAction;
