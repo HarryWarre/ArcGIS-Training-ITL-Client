@@ -21,7 +21,8 @@ const Widget = (props: AllWidgetProps<IMConfig>): React.ReactElement => {
     config?.["isParseDateEnabled"],
     config?.["parseType"],
   ];
-  console.log(useDataSources?.[0]);
+  // console.log(useDataSources?.[0]);
+  // console.log(outputDataSources);
 
   return (
     <div className='jimu-widget widget-chart'>

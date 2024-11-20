@@ -72,6 +72,8 @@ const FeatureLayerDataSourceManager = (
         dataSource as QueriableDataSource,
         splitByField
       ).then((values) => {
+        console.log(values); // [0,100,125,150] serries
+
         setSplitByValues({ [splitByField]: values });
       });
     }
@@ -109,6 +111,8 @@ const FeatureLayerDataSourceManager = (
       dsJson = dsJson.set("schema", schema);
       updateDataSourceJson(outputDataSourceId, dsJson);
       onSplitValuesChangeRef.current(splitByValues);
+      // console.log(splitByValues);
+
       onSchemaChangeRef.current(schema);
     }
   }, [dataSource, outputDataSource, splitByValues, query, seriesCount]);

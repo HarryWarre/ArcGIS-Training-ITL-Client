@@ -46,7 +46,7 @@ const Chart = (props: Props): React.ReactElement => {
   const useInlineData = whetherUseInlineDataSource(webChart, dataSource);
   return (
     <>
-      {/* {useInlineData && (
+      {useInlineData && (
         <>
           <InlineDataSourceManager
             widgetId={widgetId}
@@ -66,7 +66,7 @@ const Chart = (props: Props): React.ReactElement => {
             defaultTemplateType={defaultTemplateType}
           />
         </>
-      )} */}
+      )}
       {!useInlineData && (
         <WebFeatureLayerChart //
           widgetId={widgetId}

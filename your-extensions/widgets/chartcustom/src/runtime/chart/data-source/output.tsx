@@ -55,6 +55,7 @@ const OutputSourceManager = (props: OutputSourceManagerProps) => {
         query,
         seriesType
       );
+
       let dsJson =
         getAppStore().getState()?.appConfig.dataSources?.[outputDataSourceId];
       if (!dsJson) {
@@ -74,7 +75,6 @@ const OutputSourceManager = (props: OutputSourceManagerProps) => {
 
   React.useEffect(() => {
     if (!isDataSourceValid(outputDataSource) || !records) return;
-
     outputDataSource.setSourceRecords(records);
     outputDataSource.setStatus(DataSourceStatus.Unloaded);
     outputDataSource.setCountStatus(DataSourceStatus.Unloaded);

@@ -208,7 +208,7 @@ function WithFeatureLayerChart(
     [dispatch]
   );
 
-  // Function Get Record and send to redux ??
+  // Function Get Record ??
   const handleDataProcessComplete = hooks.useEventCallback((e) => {
     const dataItems = getDataItems(type, e.detail);
     const records = createRecordsFromChartData(dataItems, outputDataSource);
