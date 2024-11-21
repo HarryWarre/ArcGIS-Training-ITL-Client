@@ -40,8 +40,8 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 	const [serries, setSerries] = useState([])
 
 	const category = optionSettingChart?.category?.value
-	const categoryType = optionSettingChart?.category.type
-	const splitBy = optionSettingChart?.splitBy.value
+	const categoryType = optionSettingChart?.category?.type
+	const splitBy = optionSettingChart?.splitBy?.value
 	// console.log(optionSettingChart)
 	// console.log(splitBy)
 
@@ -80,6 +80,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		isParseDates,
 		category,
 		splitBy,
+		props.useDataSources,
 		// optionSettingChart,
 	])
 
@@ -115,7 +116,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 				setYValue(seriesData)
 			}
 		}
-	}, [dataCategory, groupBy])
+	}, [dataCategory, groupBy, props.useDataSources])
 
 	async function handleGetDatasources() {
 		const dsArr: DataSource[] = []
@@ -217,7 +218,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 				returnGeometry: false,
 				orderByFields: [`${category} ASC`],
 			})
-			// console.log(countTotal)
+			console.log(countTotal)
 
 			setDataCategory(countTotal)
 		}

@@ -37,7 +37,7 @@ const SelectFieldsDs = (props: SelectFields) => {
 		return () => {
 			clearTimeout(300)
 		}
-	}, [appToken])
+	}, [appToken, props.useDataSources])
 
 	useEffect(() => {
 		if (isDataSourcesReady && DatasourceRef.current) {
@@ -59,7 +59,7 @@ const SelectFieldsDs = (props: SelectFields) => {
 
 			setFields(toArray)
 		}
-	}, [DatasourceRef.current])
+	}, [DatasourceRef.current, isDataSourcesReady, props.useDataSources])
 
 	async function handleGetDatasources() {
 		const dsArr: DataSource[] = []
@@ -74,6 +74,8 @@ const SelectFieldsDs = (props: SelectFields) => {
 		if (dsArr.every((e) => e)) {
 			setIsDataSourceReady(true)
 			DatasourceRef.current = dsArr[0]
+			console.log(DatasourceRef.current)
+
 			clearTimeout(300)
 		} else {
 			setTimeout(() => handleGetDatasources(), 300)
