@@ -8,10 +8,12 @@ import {
 	QueryResult,
 	React,
 } from "jimu-core"
-import { useSelector, useDispatch } from "react-redux"
+import { useSelector } from "react-redux"
 import { delayTime } from "../../../common/constant"
 import "react-toastify/dist/ReactToastify.css"
 import Chart from "./chart"
+import { IMConfig } from "../config"
+import { Loading } from "jimu-ui"
 
 // Declare Hooks
 const useState = React.useState
@@ -20,8 +22,12 @@ const useRef = React.useRef
 
 // Widget start here  --------------->
 
-const Widget = (props: AllWidgetProps<any>) => {
-	const dispatch = useDispatch()
+const Widget = (props: AllWidgetProps<IMConfig>) => {
+	const { config } = props
+	const optionSettingChart = config?.optionsChart
+
+	// console.log(optionSettingChart)
+
 	const appToken = useSelector((state: IMState) => state.token)
 
 	const { current: _viewManager } = useRef(MapViewManager.getInstance())
@@ -31,21 +37,21 @@ const Widget = (props: AllWidgetProps<any>) => {
 	let timeout = null as any
 	const [xValue, setXValue] = useState([]) // List of time
 	const [yValue, setYValue] = useState([]) // List of counts
-	const [groupBy, setGroupBy] = useState<"date" | "month" | "year">("date") // Default to group by date
 	const [serries, setSerries] = useState([])
 
-	// Options chart
-	const [category, setCategory] = useState("NGAYLAPDAT") // commonto oject
+	const category = optionSettingChart?.category?.value
+	const categoryType = optionSettingChart?.category.type
+	const splitBy = optionSettingChart?.splitBy.value
+	// console.log(optionSettingChart)
+	// console.log(splitBy)
 
-	const [splitBy, setSplitBy] = useState("HIEUDONGHO")
-	const [isSplitBy, setIsSplitBy] = useState(true)
-	const [parseDateType, setParseDateType] = useState("month")
-	const [chartType, setChartType] = useState("column")
-	const [chartHeight, setChartHeight] = useState("500px")
-	const [chartTitle, setChartTitle] = useState(
-		"Biểu đồ cột số lượng theo loại bể ngầm, bể nổi"
-	)
-	const [chartSubtitle, setChartSubtitle] = useState("Loại bể nổi")
+	const isParseDates = optionSettingChart?.isParseDates
+	const isSplitBy = optionSettingChart?.isSplitBy
+	const chartType = optionSettingChart?.typechart || "column"
+	const chartHeight = optionSettingChart?.chartHeight || "500px"
+	const chartTitle = optionSettingChart?.chartTitle || ""
+	const chartSubtitle = optionSettingChart?.chartSubtitle || ""
+	const groupBy = optionSettingChart?.parseDate || "date"
 
 	useEffect(() => {
 		if (!appToken) return
@@ -59,13 +65,24 @@ const Widget = (props: AllWidgetProps<any>) => {
 	useEffect(() => {
 		if (CategoryRef.current) {
 			handleGetCategoryData(CategoryRef.current)
-			handleGetSerries(CategoryRef.current)
+			if (isSplitBy) {
+				handleGetSerries(CategoryRef.current)
+			}
 		}
-	}, [isDataSourcesReady])
+	}, [
+		isDataSourcesReady,
+		category,
+		categoryType,
+		splitBy,
+		isParseDates,
+		chartType,
+		chartHeight,
+		groupBy,
+	])
 
 	useEffect(() => {
 		if (dataCategory) {
-			const groupedData = groupData(dataCategory, groupBy, isSplitBy)
+			const groupedData = groupData(dataCategory, groupBy as any, isSplitBy)
 			const dates = Object.keys(groupedData)
 			const recordCounts = dates.map((key) => groupedData[key])
 
@@ -76,8 +93,8 @@ const Widget = (props: AllWidgetProps<any>) => {
 				groupedData,
 				serries
 			)
-			console.log(series)
-			console.log(groupedData)
+			// console.log(series)
+			// console.log(groupedData)
 
 			if (isSplitBy) {
 				setXValue(categories)
@@ -140,17 +157,15 @@ const Widget = (props: AllWidgetProps<any>) => {
 		data.records.forEach((record) => {
 			const timestamp = record.getData()[category]
 			const dateKey =
-				groupBy === "month"
+				groupBy === "month" && isParseDates
 					? formatMonth(timestamp)
-					: groupBy === "year"
+					: groupBy === "year" && isParseDates
 					? formatYear(timestamp)
 					: formatDate(timestamp)
 			const dateKeyString = dateKey.toString()
 
 			if (isSplitBy) {
-				// const serri = record.getData()[`${splitBy}`]
 				const serri = record.getData()[splitBy]
-				// console.log(serri)
 				if (!groupedData[dateKeyString]) {
 					groupedData[dateKeyString] = {}
 				}
@@ -185,7 +200,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 		const date = new Date(timestamp)
 		const year = date.getFullYear()
 		const month = date.getMonth()
-		return new Date(year, month, 1) // Trả về timestamp của ngày đầu tiên trong tháng
+		return new Date(year, month, 1)
 	}
 
 	const handleGetCategoryData = async (ds: DataSource) => {
@@ -197,7 +212,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 				returnGeometry: false,
 				orderByFields: [`${category} ASC`],
 			})
-			// console.log(countTotal)
+			console.log(countTotal)
 
 			setDataCategory(countTotal)
 		}
@@ -217,7 +232,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 			})
 
 			const distinctSerries = [...new Set(uniqueSerries)]
-			console.log(distinctSerries) // DSD, 4, 2
+			// console.log(distinctSerries)
 			setSerries(distinctSerries)
 		}
 	}
@@ -235,7 +250,7 @@ const Widget = (props: AllWidgetProps<any>) => {
 			{/* Chart */}
 			{xValue && yValue ? (
 				<Chart
-					chartType='column'
+					chartType={chartType as any}
 					chartHeight={chartHeight}
 					chartTitle={chartTitle}
 					chartSubtitle={chartSubtitle}
@@ -244,25 +259,13 @@ const Widget = (props: AllWidgetProps<any>) => {
 					tooltipSuffix=''
 					exportingEnabled={true}
 					legendEnabled={isSplitBy}
-					groupBy={groupBy}
+					groupBy={isParseDates ? groupBy : "date"}
 					isSplitBy={isSplitBy}
+					isDateType={categoryType == "esriFieldTypeDate"}
 				/>
 			) : (
-				<p>No data available</p>
+				<Loading />
 			)}
-
-			{/* Button to toggle grouping (Date/Month) */}
-			<select
-				id='grouping'
-				value={groupBy}
-				onChange={(e) =>
-					setGroupBy(e.target.value as "date" | "month" | "year")
-				}
-				style={{ padding: "5px", fontSize: "16px" }}>
-				<option value='date'>Date</option>
-				<option value='month'>Month</option>
-				<option value='year'>Year</option>
-			</select>
 		</>
 	)
 }
