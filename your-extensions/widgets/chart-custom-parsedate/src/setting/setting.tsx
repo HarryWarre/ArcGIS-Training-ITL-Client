@@ -34,9 +34,9 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 		}
 	)
 
-	useEffect(() => {
-		console.log(config)
-	}, [config])
+	// useEffect(() => {
+	// 	console.log(config)
+	// }, [config])
 
 	const onToggleUseDataEnable = (useDataSourcesEnabled: boolean) => {
 		props.onSettingChange({
@@ -44,6 +44,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			useDataSourcesEnabled,
 		})
 	}
+	console.log(props.useDataSourcesEnabled)
 
 	const onDataSourceChange = (useDataSources: UseDataSource[]) => {
 		props.onSettingChange({
@@ -96,98 +97,107 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 				widgetId={props.id}
 				isMultiple={true}
 			/>
+			{props.useDataSourcesEnabled ? (
+				<>
+					{/* Toggle isSplitBy */}
+					<SettingRow label='Split By'>
+						<Switch
+							checked={config.isSplitBy}
+							onChange={(e) =>
+								handleConfigChange("isSplitBy", e.target.checked)
+							}
+						/>
+					</SettingRow>
 
-			{/* Toggle isSplitBy */}
-			<SettingRow label='Split By'>
-				<Switch
-					checked={config.isSplitBy}
-					onChange={(e) => handleConfigChange("isSplitBy", e.target.checked)}
-				/>
-			</SettingRow>
+					<SelectFieldsDs
+						useDataSources={props.useDataSources}
+						id={id}
+						handleConfigChange={handleConfigChange}
+						handleCategoryChange={handleCategoryChange}
+						config={config}
+					/>
 
-			<SelectFieldsDs
-				useDataSources={props.useDataSources}
-				id={id}
-				handleConfigChange={handleConfigChange}
-				handleCategoryChange={handleCategoryChange}
-				config={config}
-			/>
+					<SettingSection>
+						{config.isParseDates ? (
+							<>
+								{/* Dropdown for typechart */}
+								<SettingRow flow='wrap' label='Chart Type'>
+									<Dropdown activeIcon>
+										<DropdownButton>{config.typechart}</DropdownButton>
+										<DropdownMenu>
+											{/* {["column"].map((type) => ( */}
+											{["column", "bar", "line"].map((type) => (
+												<DropdownItem
+													key={type}
+													active={config.typechart === type}
+													onClick={() => handleConfigChange("typechart", type)}>
+													{type}
+												</DropdownItem>
+											))}
+										</DropdownMenu>
+									</Dropdown>
+								</SettingRow>
 
-			<SettingSection>
-				{config.isParseDates ? (
-					<>
-						{/* Dropdown for typechart */}
-						<SettingRow flow='wrap' label='Chart Type'>
-							<Dropdown activeIcon>
-								<DropdownButton>{config.typechart}</DropdownButton>
-								<DropdownMenu>
-									{/* {["column"].map((type) => ( */}
-									{["column", "bar", "line"].map((type) => (
-										<DropdownItem
-											key={type}
-											active={config.typechart === type}
-											onClick={() => handleConfigChange("typechart", type)}>
-											{type}
-										</DropdownItem>
-									))}
-								</DropdownMenu>
-							</Dropdown>
+								{/* Type Parse Date */}
+								<SettingRow flow='wrap' label='Parse Dates'>
+									<Dropdown activeIcon>
+										<DropdownButton>{config.parseDate}</DropdownButton>
+										<DropdownMenu>
+											{["date", "month", "year"].map((type) => (
+												<DropdownItem
+													key={type}
+													active={config.parseDate === type}
+													onClick={() => handleConfigChange("parseDate", type)}>
+													{type}
+												</DropdownItem>
+											))}
+										</DropdownMenu>
+									</Dropdown>
+								</SettingRow>
+							</>
+						) : (
+							<></>
+						)}
+					</SettingSection>
+					{/* Style Chart */}
+					<SettingSection>
+						{/* Numeric Input for chartHeight */}
+						<SettingRow flow='wrap' label='Chart Height'>
+							<NumericInput
+								value={config.chartHeight}
+								onChange={(value) => handleConfigChange("chartHeight", value)}
+								min={100}
+								max={1000}
+								step={10}
+							/>
 						</SettingRow>
 
-						{/* Type Parse Date */}
-						<SettingRow flow='wrap' label='Parse Dates'>
-							<Dropdown activeIcon>
-								<DropdownButton>{config.parseDate}</DropdownButton>
-								<DropdownMenu>
-									{["date", "month", "year"].map((type) => (
-										<DropdownItem
-											key={type}
-											active={config.parseDate === type}
-											onClick={() => handleConfigChange("parseDate", type)}>
-											{type}
-										</DropdownItem>
-									))}
-								</DropdownMenu>
-							</Dropdown>
+						{/* Text Input for chartTitle */}
+						<SettingRow flow='wrap' label='Chart Title'>
+							<TextInput
+								value={config.chartTitle}
+								onChange={(e) =>
+									handleConfigChange("chartTitle", e.target.value)
+								}
+								placeholder='Enter Chart Title'
+							/>
 						</SettingRow>
-					</>
-				) : (
-					<></>
-				)}
-			</SettingSection>
-			{/* Style Chart */}
-			<SettingSection>
-				{/* Numeric Input for chartHeight */}
-				<SettingRow flow='wrap' label='Chart Height'>
-					<NumericInput
-						value={config.chartHeight}
-						onChange={(value) => handleConfigChange("chartHeight", value)}
-						min={100}
-						max={1000}
-						step={10}
-					/>
-				</SettingRow>
 
-				{/* Text Input for chartTitle */}
-				<SettingRow flow='wrap' label='Chart Title'>
-					<TextInput
-						value={config.chartTitle}
-						onChange={(e) => handleConfigChange("chartTitle", e.target.value)}
-						placeholder='Enter Chart Title'
-					/>
-				</SettingRow>
-
-				{/* Text Input for chartSubtitle */}
-				<SettingRow flow='wrap' label='Chart Subtitle'>
-					<TextInput
-						value={config.chartSubtitle}
-						onChange={(e) =>
-							handleConfigChange("chartSubtitle", e.target.value)
-						}
-						placeholder='Enter Chart Subtitle'
-					/>
-				</SettingRow>
-			</SettingSection>
+						{/* Text Input for chartSubtitle */}
+						<SettingRow flow='wrap' label='Chart Subtitle'>
+							<TextInput
+								value={config.chartSubtitle}
+								onChange={(e) =>
+									handleConfigChange("chartSubtitle", e.target.value)
+								}
+								placeholder='Enter Chart Subtitle'
+							/>
+						</SettingRow>
+					</SettingSection>
+				</>
+			) : (
+				<></>
+			)}
 		</div>
 	)
 }

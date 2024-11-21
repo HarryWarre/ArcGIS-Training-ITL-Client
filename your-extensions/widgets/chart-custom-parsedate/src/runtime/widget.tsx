@@ -71,13 +71,16 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		}
 	}, [
 		isDataSourcesReady,
-		category,
-		categoryType,
-		splitBy,
-		isParseDates,
 		chartType,
-		chartHeight,
+		isSplitBy,
+		chartTitle,
+		// chartHeight,
+		// chartSubtitle,
 		groupBy,
+		isParseDates,
+		category,
+		splitBy,
+		// optionSettingChart,
 	])
 
 	useEffect(() => {
@@ -214,7 +217,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 				returnGeometry: false,
 				orderByFields: [`${category} ASC`],
 			})
-			console.log(countTotal)
+			// console.log(countTotal)
 
 			setDataCategory(countTotal)
 		}

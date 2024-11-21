@@ -40,7 +40,7 @@ const SelectFieldsDs = (props: SelectFields) => {
 	}, [appToken])
 
 	useEffect(() => {
-		if (isDataSourcesReady) {
+		if (isDataSourcesReady && DatasourceRef.current) {
 			const ds = DatasourceRef.current as DataSource
 			const schema = ds.getSchema() // Get schema
 			const fieldEntries = Object.entries(schema)[0][1] || []
@@ -155,14 +155,19 @@ const SelectFieldsDs = (props: SelectFields) => {
 				<p>No data source available</p>
 			)}
 
-			{/* Render DataSourceComponent */}
-			{useDataSources.map((useDataSource, index) => (
-				<DataSourceComponent
-					key={`data-source-${index}`}
-					useDataSource={useDataSource}
-					widgetId={props.id}
-				/>
-			))}
+			{props.useDataSources ? (
+				<>
+					{useDataSources.map((useDataSource, index) => (
+						<DataSourceComponent
+							key={`data-source-${index}`}
+							useDataSource={useDataSource}
+							widgetId={props.id}
+						/>
+					))}
+				</>
+			) : (
+				<></>
+			)}
 		</div>
 	)
 }
