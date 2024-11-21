@@ -104,7 +104,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 					{
 						// name: "Tổng số lượng",
 						type: "column",
-						color: "#007bff",
+						color: "#007bff", // Default color when dont have split by
 						data: recordCounts,
 					},
 				]
@@ -184,6 +184,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		return groupedData
 	}
 
+	//Format date to type parse dates
 	const formatYear = (timestamp: string) => {
 		const date = new Date(timestamp)
 		// return date.getFullYear().toString()
@@ -203,6 +204,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		return new Date(year, month, 1)
 	}
 
+	// Handle get Category Data (X-Axis)
 	const handleGetCategoryData = async (ds: DataSource) => {
 		const _ds = ds as FeatureLayerDataSource
 		if (_ds) {
@@ -218,6 +220,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		}
 	}
 
+	// Handle get list serries
 	const handleGetSerries = async (ds: DataSource) => {
 		const _ds = ds as FeatureLayerDataSource
 		if (_ds) {
