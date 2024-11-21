@@ -60,8 +60,9 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		return () => {
 			clearTimeout(timeout)
 		}
-	}, [appToken])
+	}, [appToken, props.useDataSources])
 
+	//Query data
 	useEffect(() => {
 		if (CategoryRef.current) {
 			handleGetCategoryData(CategoryRef.current)
@@ -74,14 +75,11 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		chartType,
 		isSplitBy,
 		chartTitle,
-		// chartHeight,
-		// chartSubtitle,
 		groupBy,
 		isParseDates,
-		category,
-		splitBy,
+		optionSettingChart?.category,
+		optionSettingChart?.splitBy,
 		props.useDataSources,
-		// optionSettingChart,
 	])
 
 	useEffect(() => {
@@ -116,7 +114,19 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 				setYValue(seriesData)
 			}
 		}
-	}, [dataCategory, groupBy, props.useDataSources])
+	}, [
+		dataCategory,
+		chartType,
+		isSplitBy,
+		chartTitle,
+		// chartHeight,
+		// chartSubtitle,
+		groupBy,
+		isParseDates,
+		optionSettingChart?.category,
+		optionSettingChart?.splitBy,
+		props.useDataSources,
+	])
 
 	async function handleGetDatasources() {
 		const dsArr: DataSource[] = []
@@ -131,6 +141,8 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 		if (dsArr.every((e) => e)) {
 			setIsDataSourceReady(true)
 			CategoryRef.current = dsArr[0]
+			// console.log(CategoryRef.current)
+
 			clearTimeout(timeout)
 		} else {
 			setTimeout(() => handleGetDatasources(), delayTime)
@@ -218,7 +230,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 				returnGeometry: false,
 				orderByFields: [`${category} ASC`],
 			})
-			console.log(countTotal)
+			// console.log(countTotal)
 
 			setDataCategory(countTotal)
 		}
