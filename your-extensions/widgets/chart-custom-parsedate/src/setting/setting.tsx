@@ -1,21 +1,20 @@
 import { AllDataSourceTypes, Immutable, React, UseDataSource } from "jimu-core"
 import { AllWidgetSettingProps } from "jimu-for-builder"
-import { DataSourceSelector } from "jimu-ui/advanced/data-source-selector"
-import { type IMConfig } from "../config"
 import {
-	Button,
-	Switch, // Import Switch
-} from "../../../../node_plugin/node_modules/@mui/material"
+  Dropdown,
+  DropdownButton,
+  DropdownItem,
+  DropdownMenu
+} from "jimu-ui"
+import { DataSourceSelector } from "jimu-ui/advanced/data-source-selector"
 import { SettingRow, SettingSection } from "jimu-ui/advanced/setting-components"
 import {
-	Dropdown,
-	DropdownButton,
-	DropdownItem,
-	DropdownMenu,
-	NumericInput,
-	TextInput,
-} from "jimu-ui"
+  Switch
+} from "../../../../node_plugin/node_modules/@mui/material"
+import { type IMConfig } from "../config"
+import AppearanceSetting from "./appearanceChart"
 import SelectFieldsDs from "./selectFieldsDs"
+import { SeriesColorPicker } from "./serriesStyle"
 
 const { useState, useEffect } = React
 
@@ -27,16 +26,19 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			isSplitBy: false,
 			typechart: "column",
 			chartHeight: 400,
-			chartTitle: "",
+			chartTitle: {},
 			chartSubtitle: "",
 			parseDate: "date",
 			isParseDates: false,
+			isShowValueOnTop: false,
+			...
 		}
 	)
+	const [datasource, setDatasource] = useState(null);
 
-	// useEffect(() => {
-	// 	console.log(config)
-	// }, [config])
+	useEffect(() => {
+		console.log(props)
+	}, [props])
 
 	const onToggleUseDataEnable = (useDataSourcesEnabled: boolean) => {
 		props.onSettingChange({
@@ -44,7 +46,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			useDataSourcesEnabled,
 		})
 	}
-	console.log(props.useDataSourcesEnabled)
+	// console.log(props.useDataSourcesEnabled)
 
 	const onDataSourceChange = (useDataSources: UseDataSource[]) => {
 		props.onSettingChange({
@@ -62,6 +64,28 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			config: { ...propConfig, optionsChart: updatedConfig },
 		})
 	}
+
+	const handleConfigChangeWithParent = (parentKey, key, value) => {
+    const updatedConfig = {
+      ...config,
+      [parentKey]: {
+        ...(config[parentKey] || {}), // Đảm bảo parentKey luôn là object
+        [key]: value,
+      },
+    };
+
+    // Cập nhật state config
+    setConfig(updatedConfig);
+
+    // Gọi callback onSettingChange nếu tồn tại
+    onSettingChange?.({
+      id,
+      config: {
+        ...propConfig,
+        optionsChart: updatedConfig
+      },
+    });
+  };
 
 	const handleCategoryChange = (event, options) => {
 		const selectedOption = options.find(
@@ -82,6 +106,11 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			config: { ...propConfig, optionsChart: updatedConfig },
 		})
 	}
+
+	const handleDatasourceReady = (ds) => {
+    console.log("Datasource received:", ds);
+    setDatasource(ds); // Lưu datasource vào state
+  };
 
 	return (
 		<div className='use-feature setting p-1'>
@@ -115,6 +144,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 						handleConfigChange={handleConfigChange}
 						handleCategoryChange={handleCategoryChange}
 						config={config}
+						onDataSourceReady={handleDatasourceReady}
 					/>
 
 					<SettingSection>
@@ -126,7 +156,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 										<DropdownButton>{config.typechart}</DropdownButton>
 										<DropdownMenu>
 											{/* {["column"].map((type) => ( */}
-											{["column", "bar", "line"].map((type) => (
+											{["column", "bar", "pie"].map((type) => (
 												<DropdownItem
 													key={type}
 													active={config.typechart === type}
@@ -159,41 +189,28 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 							<></>
 						)}
 					</SettingSection>
-					{/* Style Chart */}
-					<SettingSection>
-						{/* Numeric Input for chartHeight */}
-						<SettingRow flow='wrap' label='Chart Height'>
-							<NumericInput
-								value={config.chartHeight}
-								onChange={(value) => handleConfigChange("chartHeight", value)}
-								min={100}
-								max={1000}
-								step={10}
-							/>
-						</SettingRow>
 
-						{/* Text Input for chartTitle */}
-						<SettingRow flow='wrap' label='Chart Title'>
-							<TextInput
-								value={config.chartTitle}
-								onChange={(e) =>
-									handleConfigChange("chartTitle", e.target.value)
-								}
-								placeholder='Enter Chart Title'
-							/>
-						</SettingRow>
+					{config.isSplitBy ?
+					<>
+    				<SettingSection>
+          		<SeriesColorPicker
+                datasource = {datasource}
+                isSplitBy={config.isSplitBy}
+                splitBy = {config.splitBy?.value}
+                onSeriesColorsChange={handleConfigChangeWithParent}
+                id={id}
+                serriesColor = {config?.serries}
+                serriesDomain = {config.splitBy?.['domain']?.['codedValues']}
+                  />
+   					</SettingSection>
+					</> : <></>}
 
-						{/* Text Input for chartSubtitle */}
-						<SettingRow flow='wrap' label='Chart Subtitle'>
-							<TextInput
-								value={config.chartSubtitle}
-								onChange={(e) =>
-									handleConfigChange("chartSubtitle", e.target.value)
-								}
-								placeholder='Enter Chart Subtitle'
-							/>
-						</SettingRow>
-					</SettingSection>
+
+          <AppearanceSetting
+            config={config}
+            onConfigChange={handleConfigChange}
+            onConfigParentChange={handleConfigChangeWithParent}
+          />
 				</>
 			) : (
 				<></>

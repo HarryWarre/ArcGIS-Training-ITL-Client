@@ -108,7 +108,7 @@ export interface ChartComponentsProps extends ChartComponentEventCallbacks {
     | ScatterPlotLabelFormatCallback
     | BarAndLineDataLabelFormatCallback;
   /**
-   * Used by the legend position change action.
+   * Used by the legend position change actions.
    */
   legendPosition?: WebChartLegendPositions;
   /**
@@ -119,14 +119,14 @@ export interface ChartComponentsProps extends ChartComponentEventCallbacks {
   legendValueLabelFormatter?: PieChartLegendValueLabelFormatCallback;
   /**
    * Can be used to disable the default setting that uses debounce functions to handle the visibility of markers that are outside of the plotting area
-   * when the min/max bound changes and/or when a zoom action is performed (via chart cursor or scrollbar), to increase performance.
+   * when the min/max bound changes and/or when a zoom actions is performed (via chart cursor or scrollbar), to increase performance.
    * This property will be set when the chart is created and cannot be updated after that. It's recommended that this property should only be set to true for small datasets.
    * @default false
    * Note: Only valid for `lineSeries` and `scatterSeries`.
    */
   ignoreSmoothRenderingLimit?: boolean;
   /**
-   * Used by the legend visibility change action.
+   * Used by the legend visibility change actions.
    */
   legendVisibility?: boolean;
   /**

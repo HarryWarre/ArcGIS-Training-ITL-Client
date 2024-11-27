@@ -1,292 +1,316 @@
-import { FeatureLayerDataSource, MapViewManager } from "jimu-arcgis"
+import {type FeatureLayerDataSource} from 'jimu-arcgis'
 import {
-	AllWidgetProps,
-	DataSource,
-	DataSourceComponent,
-	DataSourceManager,
-	IMState,
-	QueryResult,
-	React,
-} from "jimu-core"
-import { useSelector } from "react-redux"
-import { delayTime } from "../../../common/constant"
-import "react-toastify/dist/ReactToastify.css"
-import Chart from "./chart"
-import { IMConfig } from "../config"
-import { Loading } from "jimu-ui"
+  type AllWidgetProps,
+  type DataSource,
+  DataSourceComponent,
+  DataSourceManager, FeatureLayerQueryParams,
+  type IMState,
+  React,
+} from 'jimu-core'
+import { Loading } from 'jimu-ui'
+import { useSelector} from 'react-redux'
+import { type IMConfig } from '../config'
+import Chart from './chart'
+import { formatDate, formatMonth, formatYear } from './utils'
+
+/**
+ * Hiện tại bị lỗi phần nếu filter sử dụng trên 2 Feature Layer Datasource, sẽ bị lỗi (do đang lâý datasource đầu tiên)
+ */
+
 
 // Declare Hooks
-const useState = React.useState
-const useEffect = React.useEffect
-const useRef = React.useRef
-
+const { useState, useEffect, useRef } = React
 // Widget start here  --------------->
 
 const Widget = (props: AllWidgetProps<IMConfig>) => {
-	const { config } = props
-	const optionSettingChart = config?.optionsChart
+  const { config } = props
+  const optionSettingChart = config?.optionsChart
+  const appToken = useSelector((state: IMState) => state.token)
 
-	// console.log(optionSettingChart)
+  const CategoryRef = useRef<DataSource>(null)
+  const [isDataSourcesReady, setIsDataSourceReady] = useState(false)
+  const [dataCategory, setDataCategory] = useState(null)
+  const timeout = null as any
+  const [xValue, setXValue] = useState([]) // List of time
+  const [yValue, setYValue] = useState([]) // List of counts
+  const [serries, setserries] = useState([])
 
-	const appToken = useSelector((state: IMState) => state.token)
+  const category = optionSettingChart?.category?.value
+  const categoryType = optionSettingChart?.category?.type
+  const splitBy = optionSettingChart?.splitBy?.value
+  const splitByDomainCode = optionSettingChart?.splitBy?.domain
+  const isParseDates = optionSettingChart?.isParseDates
+  const isSplitBy = optionSettingChart?.isSplitBy
+  const chartType = optionSettingChart?.typechart || 'column'
+  const chartHeight = optionSettingChart?.chartHeight || '500px'
+  const chartTitle = optionSettingChart?.chartTitle
+  const chartSubtitle = optionSettingChart?.chartSubtitle
+  const groupBy = optionSettingChart?.parseDate || 'date'
+  const isShowValueOnTop = optionSettingChart?.isShowValueOnTop || false
+  let serriseColors = optionSettingChart?.serries
 
-	const { current: _viewManager } = useRef(MapViewManager.getInstance())
-	let CategoryRef = useRef<DataSource>(null)
-	const [isDataSourcesReady, setIsDataSourceReady] = useState(false)
-	const [dataCategory, setDataCategory] = useState(null)
-	let timeout = null as any
-	const [xValue, setXValue] = useState([]) // List of time
-	const [yValue, setYValue] = useState([]) // List of counts
-	const [serries, setSerries] = useState([])
+  const filterExpression = props.stateProps?.['queryString']
+  console.log(props.stateProps)
+  useEffect(() => {
+    if (!appToken) return
+    clearTimeout(timeout)
+    handleGetDatasources()
+    return () => {
+      clearTimeout(timeout)
+    }
+  }, [appToken, props.useDataSources])
 
-	const category = optionSettingChart?.category?.value
-	const categoryType = optionSettingChart?.category?.type
-	const splitBy = optionSettingChart?.splitBy?.value
-	// console.log(optionSettingChart)
-	// console.log(splitBy)
+  //Query data
+  useEffect(() => {
+    if (CategoryRef.current) {
+      handleGetData(CategoryRef.current)
+    }
+  }, [
+    isDataSourcesReady,
+    optionSettingChart?.category,
+    optionSettingChart?.splitBy,
+    props.useDataSources,
+    filterExpression
+  ])
 
-	const isParseDates = optionSettingChart?.isParseDates
-	const isSplitBy = optionSettingChart?.isSplitBy
-	const chartType = optionSettingChart?.typechart || "column"
-	const chartHeight = optionSettingChart?.chartHeight || "500px"
-	const chartTitle = optionSettingChart?.chartTitle || ""
-	const chartSubtitle = optionSettingChart?.chartSubtitle || ""
-	const groupBy = optionSettingChart?.parseDate || "date"
+  useEffect(() => {
+    if (dataCategory) {
+      const groupedData = groupData(dataCategory, groupBy as any, isSplitBy)
+      const dates = Object.keys(groupedData)
+      const recordCounts = dates.map((key) => groupedData[key])
+      const { series, categories } = transformToHighchartsSeries(
+        groupedData,
+        serries
+      )
+      if (isSplitBy) {
+        setXValue(categories)
+        setYValue(series)
+      } else {
+        const seriesData = [
+          {
+            // name: "Tổng số lượng",
+            type: 'column',
+            color: '#007bff', // Default color when don't have split by
+            data: recordCounts,
+            dataLabels: {
+              enabled: true,
+              style: {
+                  fontWeight: 'normal',
+                  color: 'black',
+                  fontSize: '12px'
+              },
+              formatter: function () {
+                  // console.log(isShowValueOnTop)
+                  return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
+              }
+            },
+          }
+        ]
+        setXValue(dates)
+        setYValue(seriesData)
+      }
+    }
+  }, [
+    dataCategory,
+    chartType,
+    isSplitBy,
+    isShowValueOnTop,
+    chartTitle,
+    groupBy,
+    isParseDates,
+    optionSettingChart?.category,
+    optionSettingChart?.splitBy,
+    props.useDataSources,
+    serriseColors
+  ])
 
-	useEffect(() => {
-		if (!appToken) return
-		clearTimeout(timeout)
-		handleGetDatasources()
-		return () => {
-			clearTimeout(timeout)
-		}
-	}, [appToken, props.useDataSources])
+  async function handleGetDatasources () {
+    const dsArr: DataSource[] = []
 
-	//Query data
-	useEffect(() => {
-		if (CategoryRef.current) {
-			handleGetCategoryData(CategoryRef.current)
-			if (isSplitBy) {
-				handleGetSerries(CategoryRef.current)
-			}
-		}
-	}, [
-		isDataSourcesReady,
-		chartType,
-		isSplitBy,
-		chartTitle,
-		groupBy,
-		isParseDates,
-		optionSettingChart?.category,
-		optionSettingChart?.splitBy,
-		props.useDataSources,
-	])
+    props.useDataSources?.forEach((useDataSource) => {
+      const ds = DataSourceManager.getInstance().getDataSource(
+        useDataSource?.dataSourceId
+      )
+      dsArr.push(ds)
+    })
 
-	useEffect(() => {
-		if (dataCategory) {
-			const groupedData = groupData(dataCategory, groupBy as any, isSplitBy)
-			const dates = Object.keys(groupedData)
-			const recordCounts = dates.map((key) => groupedData[key])
+    if (dsArr.every((e) => e)) {
+      setIsDataSourceReady(true)
+      CategoryRef.current = dsArr[0]
+      clearTimeout(timeout)
+    } else {
+      setTimeout(() => handleGetDatasources(), 300)
+    }
+  }
 
-			// console.log(groupedData)
-			// console.log(recordCounts)
+  const transformToHighchartsSeries = (groupedData: any, serries: string[]) => {
+    const categories = Object.keys(groupedData)
+    const result = serries.map((serri) => {
+      return {
+        name: serri,
+        data: categories.map((category) => groupedData[category][serri] || 0),
+        color: serriseColors?.[`${serri}`],
+        dataLabels: {
+                    enabled: true,
+                    style: {
+                        fontWeight: 'normal',
+                        color: 'black',
+                        fontSize: '12px'
+                    },
+                    formatter: function () {
+                        // console.log(isShowValueOnTop)
+                        return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
+                    }
+                },
+        marker: {
+          symbol: 'square'
+        }
+      }
+    })
+    return { series: result, categories }
+  }
 
-			const { series, categories } = transformToHighchartsSeries(
-				groupedData,
-				serries
-			)
-			// console.log(series)
-			// console.log(groupedData)
+  const groupData = (
+    allRecords: any[],
+    groupBy: 'date' | 'month' | 'year',
+    isSplitBy: boolean
+  ) => {
+    const groupedData = {}
 
-			if (isSplitBy) {
-				setXValue(categories)
-				setYValue(series)
-			} else {
-				const seriesData = [
-					{
-						// name: "Tổng số lượng",
-						type: "column",
-						color: "#007bff", // Default color when dont have split by
-						data: recordCounts,
-					},
-				]
-				setXValue(dates)
-				setYValue(seriesData)
-			}
-		}
-	}, [
-		dataCategory,
-		chartType,
-		isSplitBy,
-		chartTitle,
-		// chartHeight,
-		// chartSubtitle,
-		groupBy,
-		isParseDates,
-		optionSettingChart?.category,
-		optionSettingChart?.splitBy,
-		props.useDataSources,
-	])
+    allRecords.forEach((record) => {
+      const timestamp = record.getData()[category]
+      const dateKey =
+        groupBy === 'month' && isParseDates
+          ? formatMonth(timestamp)
+          : groupBy === 'year' && isParseDates
+            ? formatYear(timestamp)
+            : formatDate(timestamp)
+      const dateKeyString = dateKey.toString()
 
-	async function handleGetDatasources() {
-		const dsArr: DataSource[] = []
+      // If client use series
+      if (isSplitBy && splitBy) {
+        let serri = record.getData()[splitBy] // T G P
+        // Convert from code to name
+        if (splitByDomainCode?.codedValues) {
+          const codeToNameMap = Object.fromEntries(
+            splitByDomainCode.codedValues.map((item:any) => [item.code, item.name])
+          );
+          serri = codeToNameMap[serri] || serri
+        }
+        // <------------------------->
+        if (!groupedData[dateKeyString]) {
+          groupedData[dateKeyString] = {}
+        }
+        if (!groupedData[dateKeyString][serri]) {
+          groupedData[dateKeyString][serri] = 0
+        }
+        groupedData[dateKeyString][serri]++
+      } else {
+        if (!groupedData[dateKeyString]) {
+          groupedData[dateKeyString] = 0
+        }
+        groupedData[dateKeyString]++
+      }
+    })
+    // console.log(groupedData)
+    return groupedData
+  }
 
-		props.useDataSources?.forEach((useDataSource, index) => {
-			const ds = DataSourceManager.getInstance().getDataSource(
-				useDataSource?.dataSourceId
-			)
-			dsArr.push(ds)
-		})
+  const handleGetData = async (ds: DataSource) => {
+    const _ds = ds as FeatureLayerDataSource
+    if (_ds && category) {
+      const whereConditions = [
+        `${category} is not null`,
+        'OBJECTID is not null',
+        splitBy ? `${splitBy} is not null` : null,
+        filterExpression ? filterExpression : null
+      ]
+        .filter(Boolean)
+        .join(' AND ')
 
-		if (dsArr.every((e) => e)) {
-			setIsDataSourceReady(true)
-			CategoryRef.current = dsArr[0]
-			// console.log(CategoryRef.current)
+      const pageSize = 2000
+      const totalRecords = await _ds.queryCount(whereConditions as FeatureLayerQueryParams)
+      // console.log(count)
+      const totalPages = Math.ceil(totalRecords.count / pageSize)
+      const allPromises = []
+      console.log(totalPages)
+      for (let page = 1; page <= totalPages; page++) { // Replace 3 to PageSize if you want to full Pages
+        const queryPromise = _ds.query({
+          outFields: [`${category}`,'OBJECTID', splitBy ? splitBy :null],
+          where: whereConditions,
+          returnGeometry: false,
+          orderByFields: [`${category} ASC`],
+          page: page,
+          pageSize: pageSize
+        }).then((result) => {
+          // console.log(result)
+          return result.records
+        })
 
-			clearTimeout(timeout)
-		} else {
-			setTimeout(() => handleGetDatasources(), delayTime)
-		}
-	}
+        allPromises.push(queryPromise)
+      }
 
-	const transformToHighchartsSeries = (groupedData: any, serries: string[]) => {
-		const categories = Object.keys(groupedData)
-		const result = serries.map((serri) => {
-			return {
-				name: serri,
-				data: categories.map((category) => groupedData[category][serri] || 0),
-				marker: {
-					symbol: "square",
-				},
-			}
-		})
-		return { series: result, categories }
-	}
+      const allResults = await Promise.all(allPromises)
+      const allRecords = allResults.flat()
 
-	const groupData = (
-		data: QueryResult,
-		groupBy: "date" | "month" | "year",
-		isSplitBy: boolean
-	) => {
-		const groupedData = {}
+      setDataCategory(allRecords)
 
-		data.records.forEach((record) => {
-			const timestamp = record.getData()[category]
-			const dateKey =
-				groupBy === "month" && isParseDates
-					? formatMonth(timestamp)
-					: groupBy === "year" && isParseDates
-					? formatYear(timestamp)
-					: formatDate(timestamp)
-			const dateKeyString = dateKey.toString()
+      if (splitBy) {
+        const uniqueSerries = allRecords.map((record) => {
+          return record.getData()[`${splitBy}`]
+        })
 
-			if (isSplitBy) {
-				const serri = record.getData()[splitBy]
-				if (!groupedData[dateKeyString]) {
-					groupedData[dateKeyString] = {}
-				}
-				if (!groupedData[dateKeyString][serri]) {
-					groupedData[dateKeyString][serri] = 0
-				}
-				groupedData[dateKey.toString()][serri]++
-			} else {
-				if (!groupedData[dateKeyString]) {
-					groupedData[dateKeyString] = 0
-				}
-				groupedData[dateKeyString]++
-			}
-		})
+        const distinctSerries = [...new Set(uniqueSerries)];
 
-		return groupedData
-	}
+        if (splitByDomainCode?.codedValues) {
+          // Convert Code to Name from domain
+          const codeToNameMap = Object.fromEntries(
+            splitByDomainCode.codedValues.map((item:any) => [item.code, item.name])
+          );
+          const updatedSerries = distinctSerries.map((item) =>
+            codeToNameMap[item] || item
+          );
+          // console.log(splitByDomainCode?.codedValues)
+          setserries(updatedSerries);
+        }
+        else setserries(distinctSerries)
+      }
+    }
+  }
 
-	//Format date to type parse dates
-	const formatYear = (timestamp: string) => {
-		const date = new Date(timestamp)
-		// return date.getFullYear().toString()
-		return date.getFullYear()
-	}
+  return (
+    <>
+      {props.useDataSources?.map((useDataSource, index) => (
+        <DataSourceComponent
+          key={`data-source-${index}`}
+          useDataSource={useDataSource}
+          widgetId={props.id}
+        />
+      ))}
 
-	const formatDate = (timestamp: string) => {
-		const date = new Date(timestamp)
-		// return `${date.getDate()} thg ${date.getMonth() + 1}, ${date.getFullYear()}`
-		return date
-	}
-
-	const formatMonth = (timestamp: string) => {
-		const date = new Date(timestamp)
-		const year = date.getFullYear()
-		const month = date.getMonth()
-		return new Date(year, month, 1)
-	}
-
-	// Handle get Category Data (X-Axis)
-	const handleGetCategoryData = async (ds: DataSource) => {
-		const _ds = ds as FeatureLayerDataSource
-		if (_ds) {
-			const countTotal = await _ds.query({
-				outFields: ["*"],
-				where: `${category} is not null AND OBJECTID is not null AND ${splitBy} is not null`,
-				returnGeometry: false,
-				orderByFields: [`${category} ASC`],
-			})
-			// console.log(countTotal)
-
-			setDataCategory(countTotal)
-		}
-	}
-
-	// Handle get list serries
-	const handleGetSerries = async (ds: DataSource) => {
-		const _ds = ds as FeatureLayerDataSource
-		if (_ds) {
-			const serries = await _ds.query({
-				outFields: [`${splitBy}`],
-				where: `${category} is not null AND OBJECTID is not null AND ${splitBy} is not null`,
-				returnGeometry: false,
-			})
-
-			const uniqueSerries = serries.records.map((record) => {
-				return record.getData()[`${splitBy}`]
-			})
-
-			const distinctSerries = [...new Set(uniqueSerries)]
-			// console.log(distinctSerries)
-			setSerries(distinctSerries)
-		}
-	}
-
-	return (
-		<>
-			{props.useDataSources?.map((useDataSource, index) => (
-				<DataSourceComponent
-					key={`data-source-${index}`}
-					useDataSource={useDataSource}
-					widgetId={props.id}
-				/>
-			))}
-
-			{/* Chart */}
-			{xValue && yValue ? (
-				<Chart
-					chartType={chartType as any}
-					chartHeight={chartHeight}
-					chartTitle={chartTitle}
-					chartSubtitle={chartSubtitle}
-					xAxisCategories={xValue}
-					seriesData={yValue}
-					tooltipSuffix=''
-					exportingEnabled={true}
-					legendEnabled={isSplitBy}
-					groupBy={isParseDates ? groupBy : "date"}
-					isSplitBy={isSplitBy}
-					isDateType={categoryType == "esriFieldTypeDate"}
-				/>
-			) : (
-				<Loading />
-			)}
-		</>
-	)
+      {/* Chart */}
+      {xValue && yValue
+        ? (
+        <Chart
+          chartType={chartType as any}
+          chartHeight={chartHeight}
+          chartTitle={chartTitle}
+          chartSubtitle={chartSubtitle}
+          xAxisCategories={xValue}
+          seriesData={yValue}
+          tooltipSuffix=""
+          exportingEnabled={true}
+          legendEnabled={isSplitBy}
+          groupBy={isParseDates ? groupBy : 'date'}
+          isSplitBy={isSplitBy}
+          isDateType={categoryType === 'esriFieldTypeDate'}
+        />
+          )
+        : (
+        <Loading />
+          )}
+    </>
+  )
 }
 
 export default Widget

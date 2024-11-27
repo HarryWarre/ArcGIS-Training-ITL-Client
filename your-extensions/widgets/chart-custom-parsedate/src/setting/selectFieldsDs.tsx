@@ -1,20 +1,21 @@
 import {
-	DataSourceComponent,
-	DataSourceManager,
-	IMState,
-	React,
-} from "jimu-core"
-import { DataSource } from "jimu-core"
-import { Select, Switch } from "jimu-ui" // Assuming you are using jimu-ui for UI components
-import { SettingRow, SettingSection } from "jimu-ui/advanced/setting-components"
-import { useSelector } from "react-redux"
+    DataSource,
+    DataSourceComponent,
+    DataSourceManager,
+    IMState,
+    React
+} from "jimu-core";
+import { Select, Switch } from "jimu-ui"; // Assuming you are using jimu-ui for UI components
+import { SettingRow, SettingSection } from "jimu-ui/advanced/setting-components";
+import { useSelector } from "react-redux";
 
 interface SelectFields {
 	useDataSources
 	id
 	handleConfigChange
 	handleCategoryChange
-	config
+	config,
+	onDataSourceReady
 }
 const { useEffect, useRef, useState } = React
 const SelectFieldsDs = (props: SelectFields) => {
@@ -24,6 +25,7 @@ const SelectFieldsDs = (props: SelectFields) => {
 		handleCategoryChange,
 		id,
 		config,
+		onDataSourceReady
 	} = props
 	const appToken = useSelector((state: IMState) => state.token)
 
@@ -42,21 +44,27 @@ const SelectFieldsDs = (props: SelectFields) => {
 	useEffect(() => {
 		if (isDataSourcesReady && DatasourceRef.current) {
 			const ds = DatasourceRef.current as DataSource
+
 			const schema = ds.getSchema() // Get schema
 			const fieldEntries = Object.entries(schema)[0][1] || []
-			const toArray = Object.values(fieldEntries).map((item) => {
+			console.log(fieldEntries)
+
+			const fields = ds["layerDefinition"]["fields"]
+			console.log(fields)
+			const toArray = Object.values(fields).map((item) => {
 				const field = item as {
-					jimuName: string
+					name: string
 					alias: string
-					esriType: string
+					type: string
+          domain: object
 				}
 				return {
-					jimuName: field.jimuName,
+					name: field.name,
 					alias: field.alias,
-					esriType: field.esriType,
+					type: field.type,
+					domain: field.domain
 				}
 			})
-
 			setFields(toArray)
 		}
 	}, [DatasourceRef.current, isDataSourcesReady, props.useDataSources])
@@ -74,7 +82,8 @@ const SelectFieldsDs = (props: SelectFields) => {
 		if (dsArr.every((e) => e)) {
 			setIsDataSourceReady(true)
 			DatasourceRef.current = dsArr[0]
-			console.log(DatasourceRef.current)
+			onDataSourceReady(dsArr[0])
+			// console.log(DatasourceRef.current["layerDefinition"]["fields"])
 
 			clearTimeout(300)
 		} else {
@@ -86,23 +95,26 @@ const SelectFieldsDs = (props: SelectFields) => {
 		const selectedOption = options.find(
 			(option) => option.value === event.target.value
 		)
+		console.log(selectedOption)
 		handleConfigChange("splitBy", selectedOption)
 	}
 
 	const dateFields = fields.filter(
-		(field) => field.esriType === "esriFieldTypeDate"
+		(field) => field.type === "esriFieldTypeDate"
 	)
 
 	const categoryOptions = dateFields.map((field) => ({
-		value: field.jimuName,
-		label: `${field.esriType} - ${field.jimuName}`,
-		type: field.esriType,
+		value: field.name,
+		label: `${field.type} - ${field.name}`,
+		type: field.type,
+		domain: field.domain
 	}))
 
 	const options = fields.map((field) => ({
-		value: field.jimuName,
-		label: `${field.esriType} - ${field.jimuName}`,
-		type: field.esriType,
+		value: field.name,
+		label: `${field.type} - ${field.name}`,
+		type: field.type,
+		domain: field.domain
 	}))
 	return (
 		<div>

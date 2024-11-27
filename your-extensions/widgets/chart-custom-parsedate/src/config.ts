@@ -6,20 +6,26 @@ export interface Config {
 		typechart: string
 		isSplitBy: boolean
 		chartHeight: number
-		chartTitle: string
-		chartSubtitle: string
+		chartTitle: object // Object for chart Title
+		chartSubtitle: object // Object for chart Subtitle
 		parseDate: string
 		isParseDates: boolean
-		category: {
+		isShowValueOnTop: boolean
+		category: { // Not converted to any type object
 			label: string
 			type: string
 			value: string
+			domain: object
 		}
-		splitBy: {
+		splitBy: { // Not converted to any type object
 			label: string
 			type: string
 			value: string
+			domain: {
+			 codedValues: any
+			}
 		}
+		serries: object
 	}
 }
 
