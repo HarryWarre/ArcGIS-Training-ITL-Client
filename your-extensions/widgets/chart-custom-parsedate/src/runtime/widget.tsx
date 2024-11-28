@@ -77,7 +77,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     optionSettingChart?.splitBy,
     props.useDataSources,
     filterExpression,
-    colChartParseDateMessage
+    colChartParseDateMessage // Bị lỗi show value
   ])
 
   useEffect(() => {
@@ -162,16 +162,16 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     const pieData = transformToPieChartData(dataCategory);
 
     const xValues = pieData.map((item) => item.name); // Labels for pie slices
-    const yValues = [
-      {
-        type: "pie",
-        data: pieData,
-        dataLabels: {
-          enabled: true,
-          format: "<b>{point.name}</b>: {point.percentage:.1f}%",
-        },
-      },
-    ];
+    // const yValues = [
+    //   {
+    //     type: "pie",
+    //     data: pieData,
+    //     dataLabels: {
+    //       enabled: true,
+    //       format: "<b>{point.name}</b>: {point.percentage:.1f}%",
+    //     },
+    //   },
+    // ];
 
     setXValue(xValues);
     setYValue(pieData);
@@ -188,17 +188,16 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         data: categories.map((category) => groupedData[category][serri] || 0),
         color: serriseColors?.[`${serri}`],
         dataLabels: {
-                    enabled: true,
-                    style: {
-                        fontWeight: 'normal',
-                        color: 'black',
-                        fontSize: '12px'
-                    },
-                    formatter: function () {
-                        // console.log(isShowValueOnTop)
-                        return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
-                    }
-                },
+          style: {
+              fontWeight: 'normal',
+              color: 'black',
+              fontSize: '12px'
+          },
+          formatter: function () {
+              // console.log(isShowValueOnTop)
+              return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
+          }
+      },
         marker: {
           symbol: 'square'
         }
@@ -307,7 +306,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       ]
           .filter(Boolean)
           .join(' AND ');
-      // console.log(colChartParseDateMessage)
+      console.log(colChartParseDateMessage)
       // Chỉ áp dụng khi chartType là 'pie' và parseType là 'month'
       if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'month') {
         const date = new Date(colChartParseDateMessage?.timestamp);
@@ -436,6 +435,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
                     dispatch = {props.dispatch}
                     category={category}
                     previousFilter = {colChartParseDateMessage}
+                    // previousFilter = {colChartParseDateMessage}
                 />
             ) : (
                 <PieChart

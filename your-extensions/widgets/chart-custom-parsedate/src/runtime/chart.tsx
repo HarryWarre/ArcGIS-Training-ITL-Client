@@ -28,6 +28,7 @@ interface ColChartProps {
   previousFilter
 }
 
+const {useState}= React
 const Chart: React.FC<ColChartProps> = ({
   chartType = 'column',
   chartHeight = '50%',
@@ -109,7 +110,7 @@ const Chart: React.FC<ColChartProps> = ({
       }
     },
     xAxis: {
-      crosshair: false,
+      // crosshair: false,
       categories: xAxisCategories,
       accessibility: {
         description: 'Days'
@@ -135,6 +136,7 @@ const Chart: React.FC<ColChartProps> = ({
         afterSetExtremes: function (e) {
             const chart = this.chart;
             const zoomedRange = e.max - e.min;
+            // console.log(zoomedRange)
             const threshold = 15; // Level zoom to show the value
 
             chart.series.forEach(series => {
@@ -151,12 +153,13 @@ const Chart: React.FC<ColChartProps> = ({
     },
     yAxis: {
       visible: true,
+      opposite: false,
       min: 0,
       title: {
         text: ''
       },
       labels:{
-        enabled: true
+        enabled: true,
       },
     },
     tooltip: {
@@ -239,22 +242,7 @@ const Chart: React.FC<ColChartProps> = ({
                         : messageColumnChart
                 )
             );
-            // previousFilter && (previousFilter !== messageColumnChart) ?
-            //     dispatch(
-            //         appActions.widgetStatePropChange(
-            //             "chartParseDate",
-            //             "colChartParseDate",
-            //             undefined
-            //         )
-            //     ) :
-            //     dispatch(
-            //         appActions.widgetStatePropChange(
-            //             "chartParseDate",
-            //             "colChartParseDate",
-            //             messageColumnChart
-            //         )
-            //     );
-          }
+          },
         }
       }
     },
