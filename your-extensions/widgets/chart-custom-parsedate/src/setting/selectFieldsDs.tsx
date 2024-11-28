@@ -15,7 +15,8 @@ interface SelectFields {
 	handleConfigChange
 	handleCategoryChange
 	config,
-	onDataSourceReady
+	onDataSourceReady,
+	typechart
 }
 const { useEffect, useRef, useState } = React
 const SelectFieldsDs = (props: SelectFields) => {
@@ -124,33 +125,40 @@ const SelectFieldsDs = (props: SelectFields) => {
 						<SettingRow label={"SelectCategory"} flow='wrap'>
 							<Select
 								value={config.category?.value || ""}
-								onChange={(e) => {
-									handleCategoryChange(e, categoryOptions)
-								}}>
-								<option value='' disabled>
+								onChange={(e) =>
+									handleCategoryChange(
+										e,
+										props.typechart !== "pie" ? categoryOptions : options
+									)
+								}
+							>
+								<option value="" disabled>
 									Select a field
 								</option>
-								{categoryOptions.map((option) => (
+								{(props.typechart !== "pie" ? categoryOptions : options).map((option) => (
 									<option key={option.value} value={option.value}>
 										{option.label}
 									</option>
 								))}
 							</Select>
 						</SettingRow>
-						<SettingRow label={"SplitBy"} flow='wrap'>
-							<Select
-								value={config.splitBy?.value || ""}
-								onChange={handleSplitByChange}>
-								<option value='' disabled>
-									Select a field
-								</option>
-								{options.map((option) => (
-									<option key={option.value} value={option.value}>
-										{option.label}
+						{
+							props.typechart !== "pie" ?
+							<SettingRow label={"SplitBy"} flow='wrap'>
+								<Select
+									value={config.splitBy?.value || ""}
+									onChange={handleSplitByChange}>
+									<option value='' disabled>
+										Select a field
 									</option>
-								))}
-							</Select>
-						</SettingRow>
+									{options.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
+								</Select>
+							</SettingRow> : null
+						}
 					</SettingSection>
 
 					<SettingSection>

@@ -34,6 +34,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			...
 		}
 	)
+	console.log(config)
 	const [datasource, setDatasource] = useState(null);
 
 	useEffect(() => {
@@ -138,7 +139,27 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 						/>
 					</SettingRow>
 
+					<SettingSection>
+						{/* Dropdown for typechart */}
+						<SettingRow flow='wrap' label='Chart Type'>
+							<Dropdown activeIcon>
+								<DropdownButton>{config.typechart}</DropdownButton>
+								<DropdownMenu>
+									{/* {["column"].map((type) => ( */}
+									{["column", "bar", "pie"].map((type) => (
+										<DropdownItem
+											key={type}
+											active={config.typechart === type}
+											onClick={() => handleConfigChange("typechart", type)}>
+											{type}
+										</DropdownItem>
+									))}
+								</DropdownMenu>
+							</Dropdown>
+						</SettingRow>
+					</SettingSection>
 					<SelectFieldsDs
+						typechart = {config.typechart}
 						useDataSources={props.useDataSources}
 						id={id}
 						handleConfigChange={handleConfigChange}
@@ -150,24 +171,6 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 					<SettingSection>
 						{config.isParseDates ? (
 							<>
-								{/* Dropdown for typechart */}
-								<SettingRow flow='wrap' label='Chart Type'>
-									<Dropdown activeIcon>
-										<DropdownButton>{config.typechart}</DropdownButton>
-										<DropdownMenu>
-											{/* {["column"].map((type) => ( */}
-											{["column", "bar", "pie"].map((type) => (
-												<DropdownItem
-													key={type}
-													active={config.typechart === type}
-													onClick={() => handleConfigChange("typechart", type)}>
-													{type}
-												</DropdownItem>
-											))}
-										</DropdownMenu>
-									</Dropdown>
-								</SettingRow>
-
 								{/* Type Parse Date */}
 								<SettingRow flow='wrap' label='Parse Dates'>
 									<Dropdown activeIcon>
@@ -193,18 +196,32 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 					{config.isSplitBy ?
 					<>
     				<SettingSection>
-          		<SeriesColorPicker
-                datasource = {datasource}
-                isSplitBy={config.isSplitBy}
-                splitBy = {config.splitBy?.value}
-                onSeriesColorsChange={handleConfigChangeWithParent}
-                id={id}
-                serriesColor = {config?.serries}
-                serriesDomain = {config.splitBy?.['domain']?.['codedValues']}
-                  />
-   					</SettingSection>
-					</> : <></>}
+						<SeriesColorPicker
+						datasource = {datasource}
+						isSplitBy={config.isSplitBy}
+						splitBy = {config.splitBy?.value}
+						onSeriesColorsChange={handleConfigChangeWithParent}
+						id={id}
+						serriesColor = {config?.serries}
+						serriesDomain = {config.splitBy?.['domain']?.['codedValues']}
+						  />
+					</SettingSection>
+					</> : null}
 
+					{config.typechart=='pie' ?
+						<>
+							<SettingSection>
+								<SeriesColorPicker
+									datasource = {datasource}
+									isSplitBy={config.isSplitBy} // không cần
+									splitBy = {config.category?.value}// không cần
+									onSeriesColorsChange={handleConfigChangeWithParent} //đổi tên
+									id={id}
+									serriesColor = {config?.category}
+									serriesDomain = {config.category?.['domain']?.['codedValues']}
+								/>
+							</SettingSection>
+						</> : null}
 
           <AppearanceSetting
             config={config}

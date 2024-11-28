@@ -3,7 +3,7 @@ import {
   type AllWidgetProps,
   type DataSource,
   DataSourceComponent,
-  DataSourceManager, FeatureLayerQueryParams,
+  DataSourceManager, FeatureLayerQueryParams, getAppStore,
   type IMState,
   React,
 } from 'jimu-core'
@@ -12,6 +12,7 @@ import { useSelector} from 'react-redux'
 import { type IMConfig } from '../config'
 import Chart from './chart'
 import { formatDate, formatMonth, formatYear } from './utils'
+import PieChart from './pieChart'
 
 /**
  * Hiện tại bị lỗi phần nếu filter sử dụng trên 2 Feature Layer Datasource, sẽ bị lỗi (do đang lâý datasource đầu tiên)
@@ -37,6 +38,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
 
   const category = optionSettingChart?.category?.value
   const categoryType = optionSettingChart?.category?.type
+  const categoryDomainCode = optionSettingChart?.category?.domain
   const splitBy = optionSettingChart?.splitBy?.value
   const splitByDomainCode = optionSettingChart?.splitBy?.domain
   const isParseDates = optionSettingChart?.isParseDates
@@ -50,7 +52,11 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   let serriseColors = optionSettingChart?.serries
 
   const filterExpression = props.stateProps?.['queryString']
-  console.log(props.stateProps)
+  const colChartParseDateMessage = useSelector(
+      () =>
+          getAppStore().getState().widgetsState?.["chartParseDate"]?.["colChartParseDate"]
+  );
+  // console.log(props.stateProps)
   useEffect(() => {
     if (!appToken) return
     clearTimeout(timeout)
@@ -70,59 +76,32 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     optionSettingChart?.category,
     optionSettingChart?.splitBy,
     props.useDataSources,
-    filterExpression
+    filterExpression,
+    colChartParseDateMessage
   ])
 
   useEffect(() => {
-    if (dataCategory) {
-      const groupedData = groupData(dataCategory, groupBy as any, isSplitBy)
-      const dates = Object.keys(groupedData)
-      const recordCounts = dates.map((key) => groupedData[key])
-      const { series, categories } = transformToHighchartsSeries(
-        groupedData,
-        serries
-      )
-      if (isSplitBy) {
-        setXValue(categories)
-        setYValue(series)
-      } else {
-        const seriesData = [
-          {
-            // name: "Tổng số lượng",
-            type: 'column',
-            color: '#007bff', // Default color when don't have split by
-            data: recordCounts,
-            dataLabels: {
-              enabled: true,
-              style: {
-                  fontWeight: 'normal',
-                  color: 'black',
-                  fontSize: '12px'
-              },
-              formatter: function () {
-                  // console.log(isShowValueOnTop)
-                  return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
-              }
-            },
-          }
-        ]
-        setXValue(dates)
-        setYValue(seriesData)
-      }
+    if (!dataCategory) return;
+
+    switch (chartType) {
+      case "pie":
+        handlePieChart(dataCategory);
+        break;
+
+      default:
+        handleColumnChart(dataCategory, isSplitBy);
+        break;
     }
   }, [
     dataCategory,
     chartType,
     isSplitBy,
     isShowValueOnTop,
-    chartTitle,
     groupBy,
-    isParseDates,
-    optionSettingChart?.category,
-    optionSettingChart?.splitBy,
-    props.useDataSources,
-    serriseColors
-  ])
+    serries,
+    serriseColors,
+    colChartParseDateMessage
+  ]);
 
   async function handleGetDatasources () {
     const dsArr: DataSource[] = []
@@ -143,7 +122,65 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     }
   }
 
-  const transformToHighchartsSeries = (groupedData: any, serries: string[]) => {
+  const handleColumnChart = (dataCategory: any, isSplitBy: boolean) => {
+    const groupedData = groupData(dataCategory, groupBy as any, isSplitBy);
+    const dates = Object.keys(groupedData);
+    const recordCounts = dates.map((key) => groupedData[key]);
+
+    if (isSplitBy) {
+      const { series, categories } = transformToSerialSerries(
+          groupedData,
+          serries
+      );
+      setXValue(categories);
+      setYValue(series);
+    } else {
+      const seriesData = [
+        {
+          type: "column",
+          color: "#007bff", // Default color when don't have split by
+          data: recordCounts,
+          dataLabels: {
+            enabled: true,
+            style: {
+              fontWeight: "normal",
+              color: "black",
+              fontSize: "12px",
+            },
+            formatter: function () {
+              return isShowValueOnTop ? (this.y > 0 ? this.y : null) : null;
+            },
+          },
+        },
+      ];
+      setXValue(dates);
+      setYValue(seriesData);
+    }
+  };
+
+  const handlePieChart = (dataCategory: any) => {
+    const pieData = transformToPieChartData(dataCategory);
+
+    const xValues = pieData.map((item) => item.name); // Labels for pie slices
+    const yValues = [
+      {
+        type: "pie",
+        data: pieData,
+        dataLabels: {
+          enabled: true,
+          format: "<b>{point.name}</b>: {point.percentage:.1f}%",
+        },
+      },
+    ];
+
+    setXValue(xValues);
+    setYValue(pieData);
+
+    // console.log("xValues (names):", xValues);
+    // console.log("yValues (pie chart data):", yValues);
+  };
+
+  const transformToSerialSerries = (groupedData: any, serries: string[]) => {
     const categories = Object.keys(groupedData)
     const result = serries.map((serri) => {
       return {
@@ -169,6 +206,47 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
     })
     return { series: result, categories }
   }
+
+  const transformToPieChartData = (
+      allRecords: any[],
+  ) => {
+    const pieData: { name: string; y: number; color?: string }[] = [];
+    const groupedData: { [key: string]: number } = {};
+
+    // Nhóm dữ liệu theo category
+    allRecords.forEach((record) => {
+      const categoryValue = record.getData()[category]; // Lấy giá trị category
+
+      if (!groupedData[categoryValue]) {
+        groupedData[categoryValue] = 0;
+      }
+      groupedData[categoryValue]++;
+    });
+
+    // Lấy tên từ categoryDomainCode nếu có, ngược lại sử dụng key (categoryValue)
+    Object.entries(groupedData).forEach(([key, value]) => {
+      // Tìm tên từ categoryDomainCode nếu có
+      let displayName = key;
+      // console.log(key)
+      if (categoryDomainCode) {
+        const codedValue = categoryDomainCode?.["codedValues"].find(
+            (item) => item.code === key
+        );
+        // console.log(categoryDomainCode)
+        if (codedValue) {
+          displayName = codedValue.name; // Lấy name tương ứng với code
+        }
+      }
+      pieData.push({
+        name: displayName,
+        y: value,
+        color: serriseColors?.[displayName], // Optional: Áp dụng màu nếu có
+      });
+    });
+
+    return pieData;
+  };
+
 
   const groupData = (
     allRecords: any[],
@@ -217,67 +295,118 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   }
 
   const handleGetData = async (ds: DataSource) => {
-    const _ds = ds as FeatureLayerDataSource
+    const _ds = ds as FeatureLayerDataSource;
+
     if (_ds && category) {
-      const whereConditions = [
+      // Nếu parseType là 'month', tính toán điều kiện lọc theo tháng và năm từ timestamp
+      let whereConditions = [
         `${category} is not null`,
         'OBJECTID is not null',
-        splitBy ? `${splitBy} is not null` : null,
+        splitBy && isSplitBy ? `${splitBy} is not null` : null,
         filterExpression ? filterExpression : null
       ]
-        .filter(Boolean)
-        .join(' AND ')
+          .filter(Boolean)
+          .join(' AND ');
+      // console.log(colChartParseDateMessage)
+      // Chỉ áp dụng khi chartType là 'pie' và parseType là 'month'
+      if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'month') {
+        const date = new Date(colChartParseDateMessage?.timestamp);
+        const year = date.getFullYear();
+        const month = date.getMonth(); // Tháng bắt đầu từ 0 (January)
 
-      const pageSize = 2000
-      const totalRecords = await _ds.queryCount(whereConditions as FeatureLayerQueryParams)
-      // console.log(count)
-      const totalPages = Math.ceil(totalRecords.count / pageSize)
-      const allPromises = []
-      console.log(totalPages)
-      for (let page = 1; page <= totalPages; page++) { // Replace 3 to PageSize if you want to full Pages
+        // Tính toán ngày đầu tháng và ngày cuối tháng
+        const startOfMonth = new Date(year, month, 1); // Ngày đầu tháng
+        const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59); // Ngày cuối tháng, giờ 23:59:59
+
+        // Chuyển đổi thành chuỗi theo định dạng 'YYYY-MM-DD HH:MM:SS'
+        const startTimestamp = startOfMonth.toISOString().slice(0, 19).replace('T', ' ');
+        const endTimestamp = endOfMonth.toISOString().slice(0, 19).replace('T', ' ');
+
+        // Thêm điều kiện lọc theo tháng vào where
+        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+      }
+
+      if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'year') {
+        const date = new Date(colChartParseDateMessage?.timestamp);
+        const year = date.getFullYear();
+
+        // Tính toán ngày đầu năm và ngày cuối năm
+        const startOfYear = new Date(year, 0, 1); // Ngày đầu năm
+        const endOfYear = new Date(year, 11, 31, 23, 59, 59); // Ngày cuối năm, giờ 23:59:59
+
+        // Chuyển đổi thành chuỗi theo định dạng 'YYYY-MM-DD HH:MM:SS'
+        const startTimestamp = startOfYear.toISOString().slice(0, 19).replace('T', ' ');
+        const endTimestamp = endOfYear.toISOString().slice(0, 19).replace('T', ' ');
+
+        // Thêm điều kiện lọc theo năm vào where
+        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+      }
+
+      if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'date') {
+        const date = new Date(colChartParseDateMessage?.timestamp);
+
+        // Tính toán ngày cụ thể
+        const startOfDay = new Date(date.setHours(0, 0, 0, 0)); // Đầu ngày
+        const endOfDay = new Date(date.setHours(23, 59, 59, 999)); // Cuối ngày
+
+        // Chuyển đổi thành chuỗi theo định dạng 'YYYY-MM-DD HH:MM:SS'
+        const startTimestamp = startOfDay.toISOString().slice(0, 19).replace('T', ' ');
+        const endTimestamp = endOfDay.toISOString().slice(0, 19).replace('T', ' ');
+
+        // Thêm điều kiện lọc theo ngày vào where
+        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+      }
+
+      console.log(whereConditions)
+      const pageSize = 2000;
+      const totalRecords = await _ds.queryCount(whereConditions as FeatureLayerQueryParams);
+      const totalPages = Math.ceil(totalRecords.count / pageSize);
+      const allPromises = [];
+
+      for (let page = 1; page <= totalPages; page++) {
         const queryPromise = _ds.query({
-          outFields: [`${category}`,'OBJECTID', splitBy ? splitBy :null],
+          outFields: [
+            `${category}`,
+            'OBJECTID',
+            ...(isSplitBy && splitBy ? [splitBy] : [])
+          ],
           where: whereConditions,
           returnGeometry: false,
           orderByFields: [`${category} ASC`],
           page: page,
           pageSize: pageSize
         }).then((result) => {
-          // console.log(result)
-          return result.records
-        })
+          return result.records;
+        });
 
-        allPromises.push(queryPromise)
+        allPromises.push(queryPromise);
       }
 
-      const allResults = await Promise.all(allPromises)
-      const allRecords = allResults.flat()
-
-      setDataCategory(allRecords)
+      const allResults = await Promise.all(allPromises);
+      const allRecords = allResults.flat();
+      setDataCategory(allRecords);
 
       if (splitBy) {
         const uniqueSerries = allRecords.map((record) => {
-          return record.getData()[`${splitBy}`]
-        })
+          return record.getData()[`${splitBy}`];
+        });
 
         const distinctSerries = [...new Set(uniqueSerries)];
 
         if (splitByDomainCode?.codedValues) {
-          // Convert Code to Name from domain
           const codeToNameMap = Object.fromEntries(
-            splitByDomainCode.codedValues.map((item:any) => [item.code, item.name])
+              splitByDomainCode.codedValues.map((item) => [item.code, item.name])
           );
           const updatedSerries = distinctSerries.map((item) =>
-            codeToNameMap[item] || item
+              codeToNameMap[item] || item
           );
-          // console.log(splitByDomainCode?.codedValues)
           setserries(updatedSerries);
+        } else {
+          setserries(distinctSerries);
         }
-        else setserries(distinctSerries)
       }
     }
-  }
-
+  };
   return (
     <>
       {props.useDataSources?.map((useDataSource, index) => (
@@ -287,29 +416,42 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
           widgetId={props.id}
         />
       ))}
-
       {/* Chart */}
-      {xValue && yValue
-        ? (
-        <Chart
-          chartType={chartType as any}
-          chartHeight={chartHeight}
-          chartTitle={chartTitle}
-          chartSubtitle={chartSubtitle}
-          xAxisCategories={xValue}
-          seriesData={yValue}
-          tooltipSuffix=""
-          exportingEnabled={true}
-          legendEnabled={isSplitBy}
-          groupBy={isParseDates ? groupBy : 'date'}
-          isSplitBy={isSplitBy}
-          isDateType={categoryType === 'esriFieldTypeDate'}
-        />
-          )
-        : (
-        <Loading />
-          )}
-    </>
+      {
+        xValue && yValue ? (
+            chartType !== 'pie' ? (
+                <Chart
+                    chartType={chartType as any}
+                    chartHeight={chartHeight}
+                    chartTitle={chartTitle}
+                    chartSubtitle={chartSubtitle}
+                    xAxisCategories={xValue}
+                    seriesData={yValue}
+                    tooltipSuffix=""
+                    exportingEnabled={true}
+                    legendEnabled={isSplitBy}
+                    groupBy={isParseDates ? groupBy : 'date'}
+                    isSplitBy={isSplitBy}
+                    isDateType={categoryType === 'esriFieldTypeDate'}
+                    dispatch = {props.dispatch}
+                    category={category}
+                    previousFilter = {colChartParseDateMessage}
+                />
+            ) : (
+                <PieChart
+                    chartHeight={chartHeight}
+                    chartTitle={chartTitle}
+                    chartSubtitle={chartSubtitle}
+                    seriesData={yValue}
+                    exportingEnabled={true}
+                    legendEnabled={isSplitBy}
+                />
+            )
+        ) : (
+            <Loading />
+        )
+      }
+  </>
   )
 }
 

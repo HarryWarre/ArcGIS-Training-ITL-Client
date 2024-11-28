@@ -4,6 +4,7 @@ import HighchartsReact from '../../../../node_plugin/node_modules/highcharts-rea
 import Highcharts from '../../../../node_plugin/node_modules/highcharts/highstock'
 import exporting from '../../../../node_plugin/node_modules/highcharts/modules/exporting'
 import {legend} from "../../../chart-custom-parsedate/src/runtime/configChart";
+import {appActions} from 'jimu-core'
 
 // Kích hoạt module Exporting
 exporting(Highcharts)
@@ -22,6 +23,9 @@ interface ColChartProps {
   groupBy?: string
   isSplitBy?: boolean
   isDateType?: boolean
+  dispatch?: any,
+  category?:any,
+  previousFilter
 }
 
 const Chart: React.FC<ColChartProps> = ({
@@ -36,7 +40,10 @@ const Chart: React.FC<ColChartProps> = ({
   exportingEnabled = false,
   groupBy = 'date',
   isSplitBy = false,
-  isDateType = false
+  isDateType = false,
+  dispatch,
+  category,
+  previousFilter
 }) => {
   const optionsChart: Options = {
     chart: {
@@ -143,11 +150,14 @@ const Chart: React.FC<ColChartProps> = ({
       }
     },
     yAxis: {
-      visible: false,
+      visible: true,
       min: 0,
       title: {
         text: ''
-      }
+      },
+      labels:{
+        enabled: true
+      },
     },
     tooltip: {
       formatter: function () {
@@ -207,7 +217,45 @@ const Chart: React.FC<ColChartProps> = ({
     plotOptions: {
       column: {
         pointPadding: 0.25,
-        borderWidth: 0
+        borderWidth: 0,
+        events: {
+          click: function (event) {
+            const categoryDate = new Date(event.point.category); // Chuyển chuỗi thành Date
+            const timestampCategory = categoryDate.getTime(); // Lấy timestamp
+            // console.log("Timestamp của category: " + timestampCategory);
+            const messageColumnChart = {
+              category: category,
+              parseType: groupBy,
+              timestamp: timestampCategory
+            }
+            console.log(previousFilter)
+            console.log(messageColumnChart)
+            dispatch(
+                appActions.widgetStatePropChange(
+                    "chartParseDate",
+                    "colChartParseDate",
+                    previousFilter !== undefined && previousFilter?.timestamp === messageColumnChart?.timestamp
+                        ? undefined
+                        : messageColumnChart
+                )
+            );
+            // previousFilter && (previousFilter !== messageColumnChart) ?
+            //     dispatch(
+            //         appActions.widgetStatePropChange(
+            //             "chartParseDate",
+            //             "colChartParseDate",
+            //             undefined
+            //         )
+            //     ) :
+            //     dispatch(
+            //         appActions.widgetStatePropChange(
+            //             "chartParseDate",
+            //             "colChartParseDate",
+            //             messageColumnChart
+            //         )
+            //     );
+          }
+        }
       }
     },
     exporting: {
