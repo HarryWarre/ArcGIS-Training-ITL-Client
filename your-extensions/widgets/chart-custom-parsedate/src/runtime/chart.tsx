@@ -269,14 +269,19 @@ const Chart: React.FC<ColChartProps> = ({
     series: seriesData as any,
     rangeSelector: {
       enabled: false,
-      selected: 1
+      selected: 3
     },
     navigator: {
+      height: 20,
+      series: {
+        color: "transparent",
+      },
       xAxis: {
+        crosshair: true,
         labels: {
           enabled: false
-        }
-      }
+        },
+      },
     },
     credits: {
       enabled: false
