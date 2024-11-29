@@ -189,15 +189,15 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         color: serriseColors?.[`${serri}`],
         dataLabels: {
           style: {
-              fontWeight: 'normal',
-              color: 'black',
-              fontSize: '12px'
+            fontWeight: 'normal',
+            color: 'black',
+            fontSize: '12px'
           },
           formatter: function () {
-              // console.log(isShowValueOnTop)
-              return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
-          }
-      },
+            // console.log(isShowValueOnTop)
+            return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
+          },
+        },
         marker: {
           symbol: 'square'
         }

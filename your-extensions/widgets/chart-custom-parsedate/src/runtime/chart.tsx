@@ -28,7 +28,7 @@ interface ColChartProps {
   previousFilter
 }
 
-const {useState}= React
+const {useState, useEffect}= React
 const Chart: React.FC<ColChartProps> = ({
   chartType = 'column',
   chartHeight = '50%',
@@ -50,29 +50,35 @@ const Chart: React.FC<ColChartProps> = ({
     chart: {
       type: chartType,
       height: `${chartHeight}px`,
-      // zooming: {
-      // 	type: "xy",
-      // 	resetButton: {
-      // 		position: { align: "right", x: -10, y: 10 },
-      // 	},
-      // },
-      // panning: {
-      // 	enabled: true,
-      // 	type: "xy",
-      // },
-      // panKey: "shift",
       events: {
-        load: function () {
-          // eslint-disable-next-line @typescript-eslint/no-this-alias
-          const chart = this
-          const gap = 40
+          load: function () {
+            const chart = this
+            const gap = 50
 
-          chart.setTitle(
-            {},
-            {
-              y: chart.title.getBBox().height + gap
+            chart.setTitle(
+              {},
+              {
+                y: chart.title.getBBox().height + gap
+              }
+            )
+          },
+        render: function (e) {
+          const chart = this;
+          const lengthDateTime = xAxisCategories.length - 1;
+          if (xAxisCategories.length > 0) {
+            // Tính khoảng cách (10% tổng độ dài)
+            const offset = Math.round(lengthDateTime - 15);
+
+            if (offset > 0 && offset < lengthDateTime) {
+              const min = Math.max(0, offset);
+              const max = lengthDateTime;
+              const currentMin = chart.xAxis[0].min;
+
+              if (currentMin==0) {
+                chart.xAxis[0].setExtremes(min, max);
+              }
             }
-          )
+          }
         }
       }
     },
@@ -130,6 +136,10 @@ const Chart: React.FC<ColChartProps> = ({
             return `Thg ${date.getMonth() + 1}, ${date.getFullYear()}`
           }
           return `${date.getDate()} Thg ${date.getMonth() + 1}`
+        },
+        // rotation: -45, // Đặt góc quay cho nhãn (chéo)
+        style: {
+          whiteSpace: 'nowrap' // Đảm bảo nhãn không bị cắt xén
         }
       },
       events: { // Show value at top column if zoom to the static level
@@ -138,7 +148,7 @@ const Chart: React.FC<ColChartProps> = ({
             const zoomedRange = e.max - e.min;
             // console.log(zoomedRange)
             const threshold = 15; // Level zoom to show the value
-
+            console.log(e.max, e.min) // 17, 11
             chart.series.forEach(series => {
                 series.update({
                     type: 'column',
@@ -256,13 +266,17 @@ const Chart: React.FC<ColChartProps> = ({
     },
     series: seriesData as any,
     rangeSelector: {
-      enabled: false,
-      selected: 3
+      buttons:[],
+      inputEnabled: false,
+      enabled: true,
+      selected: 1
     },
     navigator: {
+      margin: 2,
       height: 20,
       series: {
         color: "transparent",
+        showInNavigator: false,
       },
       xAxis: {
         crosshair: true,
@@ -275,6 +289,19 @@ const Chart: React.FC<ColChartProps> = ({
       enabled: false
     }
   }
+
+  useEffect(() => {
+    // Truy cập chart sau khi component được render
+    const chart = optionsChart
+    // console.log(chart)
+
+    // Đặt lại extremes khi dữ liệu thay đổi
+    // const newMin = seriesData[0]?.data[0]?.x; // Lấy giá trị x đầu tiên từ dữ liệu mới
+    // const newMax = seriesData[seriesData.length - 1]?.data[0]?.x; // Lấy giá trị x cuối cùng từ dữ liệu mới
+    // if (chart.xAxis[0] && newMin && newMax) {
+    //   chart.xAxis[0].setExtremes(newMin, newMax);
+    // }
+  }, [seriesData]);
 
   return (
 		<div>
