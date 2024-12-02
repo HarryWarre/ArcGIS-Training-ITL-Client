@@ -2,6 +2,7 @@ import React from 'react';
 import Highcharts, { type Options } from '../../../../node_plugin/node_modules/highcharts';
 import HighchartsReact from '../../../../node_plugin/node_modules/highcharts-react-official';
 import exporting from '../../../../node_plugin/node_modules/highcharts/modules/exporting';
+import {DEFAULT_PIE_CHART_SETTINGS} from "./configChart/piechartConfig";
 
 // Kích hoạt module Exporting
 exporting(Highcharts);
@@ -36,34 +37,34 @@ const PieChart: React.FC<PieChartProps> = ({
       plotShadow: false,
     },
     title: {
-      text: chartTitle?.['content'] || "",
-      align: chartTitle?.['alignment'] || 'center',
-      verticalAlign: 'bottom',
+      text: chartTitle?.['content'] || DEFAULT_PIE_CHART_SETTINGS.title.text,
+      align: chartTitle?.['alignment'] || DEFAULT_PIE_CHART_SETTINGS.title.align,
+      verticalAlign: DEFAULT_PIE_CHART_SETTINGS.title.verticalAlign as any,
       style: {
-        color: chartTitle?.['color'] || "#bababa",
+        color: chartTitle?.['color'] || DEFAULT_PIE_CHART_SETTINGS.title.style.color,
         fontWeight: chartTitle?.['bold'] ? 'bold' : 'normal',
         fontStyle: chartTitle?.['italic'] ? 'italic' : 'normal',
         textDecoration: [
           chartTitle?.['underline'] ? 'underline' : '',
           chartTitle?.['strike'] ? 'line-through' : ''
         ].filter(Boolean).join(' '),
-        fontSize: chartTitle?.['size'] || '14px',
-        fontFamily: chartTitle?.['font'] || "Arial",
+        fontSize: chartTitle?.['size'] || DEFAULT_PIE_CHART_SETTINGS.title.style.fontSize,
+        fontFamily: chartTitle?.['font'] || DEFAULT_PIE_CHART_SETTINGS.title.style.fontFamily,
       },
     },
     subtitle: {
-      text: chartSubtitle?.['content'] || "",
-      align: chartSubtitle?.['alignment'] || 'center',
+      text: chartSubtitle?.['content'] || DEFAULT_PIE_CHART_SETTINGS.subtitle.text,
+      align: chartSubtitle?.['alignment'] || DEFAULT_PIE_CHART_SETTINGS.subtitle.align,
       style: {
-        color: chartSubtitle?.['color'] || "#bababa",
+        color: chartSubtitle?.['color'] || DEFAULT_PIE_CHART_SETTINGS.subtitle.style.color,
         fontWeight: chartSubtitle?.['bold'] ? 'bold' : 'normal',
         fontStyle: chartSubtitle?.['italic'] ? 'italic' : 'normal',
         textDecoration: [
           chartSubtitle?.['underline'] ? 'underline' : '',
           chartSubtitle?.['strike'] ? 'line-through' : ''
         ].filter(Boolean).join(' '),
-        fontSize: chartSubtitle?.['size'] || '12px',
-        fontFamily: chartSubtitle?.['font'] || "Arial",
+        fontSize: chartSubtitle?.['size'] || DEFAULT_PIE_CHART_SETTINGS.subtitle.style.fontSize,
+        fontFamily: chartSubtitle?.['font'] || DEFAULT_PIE_CHART_SETTINGS.subtitle.style.fontFamily,
       },
     },
     tooltip: {
@@ -71,8 +72,8 @@ const PieChart: React.FC<PieChartProps> = ({
       formatter: function() {
         return `<b>${this.point.name}</b>: ${Highcharts.numberFormat(this.point.y, 0, ',', '.')}${tooltipSuffix} (${this.point.percentage.toFixed(1)}%)`;
       },
-      borderRadius: 5,
-      shadow: false,
+      borderRadius: DEFAULT_PIE_CHART_SETTINGS.tooltip.borderRadius,
+      shadow: DEFAULT_PIE_CHART_SETTINGS.tooltip.shadow,
     },
     plotOptions: {
       pie: {
@@ -82,11 +83,9 @@ const PieChart: React.FC<PieChartProps> = ({
         allowPointSelect: true,
         animation: true,
         borderWidth: 0,
-
         dataLabels: {
           enabled: true,
           formatter: function () {
-            // Chỉ hiển thị nếu phần trăm lớn hơn hoặc bằng 10 %
             return this.percentage >= 10 ? Highcharts.numberFormat(this.percentage, 1) + '%' : null;
           },
           distance: -50,
@@ -96,19 +95,92 @@ const PieChart: React.FC<PieChartProps> = ({
             fontWeight: 'light',
             textOutline: 'none'
           }
-        }
+        },
+        states: {
+          hover: {
+            halo: false,
+            enabled: true,
+            animation: {
+              duration: 150
+            }
+          }
+        },
+        point: {
+          events: {
+            mouseOver: function () {
+              // Slice ra với animation
+              this.slice(true, true, { duration: 500 });
+
+              if (!this.dataLabel) return;
+
+              // Lưu vị trí ban đầu nếu chưa có
+              if (!this.dataLabel.initialPosition) {
+                this.dataLabel.initialPosition = {
+                  translateX: this.dataLabel.translateX,
+                  translateY: this.dataLabel.translateY
+                };
+              }
+
+              // Tính vị trí mới khi slice
+              var x = this.slicedTranslation.translateX + this.dataLabel.translateX;
+              var y = this.slicedTranslation.translateY + this.dataLabel.translateY;
+
+              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 400) {
+                // Animate dataLabel đến vị trí mới
+                this.dataLabel.animate({
+                  translateX: x,
+                  translateY: y
+                }, {
+                  duration: 500,
+                  easing: 'easeOut'
+                });
+              }
+            },
+            mouseOut: function () {
+              // Thu slice về với animation
+              this.slice(false, true, { duration: 500 });
+
+              if (!this.dataLabel) return;
+
+              // Lấy vị trí ban đầu
+              var initial = this.dataLabel.initialPosition;
+
+              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 400) {
+                // Animate dataLabel quay về vị trí ban đầu
+                this.dataLabel.animate({
+                  translateX: initial.translateX,
+                  translateY: initial.translateY
+                }, {
+                  duration: 500,
+                  easing: 'easeOut'
+                });
+              }
+            }
+          }
+        },
+        slicedOffset: 15 // Khoảng cách slice ra ngoài
       }
     },
     exporting: {
-      enabled: exportingEnabled,
+      enabled: true,
+      buttons: {
+        contextButton: {
+          menuItems: [
+            'printChart',     // Tùy chọn in
+            'viewFullscreen'  // Tùy chọn toàn màn hình
+          ]
+        }
+      }
     },
     legend: {
-      layout: 'vertical',        // Hiển thị legend theo cột dọc
-      align: 'right',            // Căn legend sang phải
-      verticalAlign: 'middle',   // Đặt legend giữa theo chiều dọc
-      // borderWidth: 1             // (Tùy chọn) Thêm viền nếu cần
-      x: -200,
-      y: 0,
+      layout: DEFAULT_PIE_CHART_SETTINGS.legend.layout as any,        // Hiển thị legend theo cột dọc
+      align: DEFAULT_PIE_CHART_SETTINGS.legend.align as any,            // Căn legend sang phải
+      verticalAlign: DEFAULT_PIE_CHART_SETTINGS.legend.verticalAlign as any,   // Đặt legend giữa theo chiều dọc
+      maxHeight: DEFAULT_PIE_CHART_SETTINGS.legend.maxHeight,            // Chieu cao của danh sách legend
+      width: DEFAULT_PIE_CHART_SETTINGS.legend.width,
+      // borderWidth: 1          // (Tùy chọn) Thêm viền nếu cần
+      x: DEFAULT_PIE_CHART_SETTINGS.legend.x,
+      y: DEFAULT_PIE_CHART_SETTINGS.legend.y,
     },
     series: [
       {
@@ -120,6 +192,64 @@ const PieChart: React.FC<PieChartProps> = ({
     credits: {
       enabled: false,
     },
+    responsive: {
+      rules: [{
+        condition: {
+          maxWidth: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].condition.maxWidth,
+        },
+        chartOptions: {
+          plotOptions: {
+            pie: {
+              dataLabels: {
+                connectorWidth: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.plotOptions.pie.dataLabels.connectorWidth,
+                distance: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.plotOptions.pie.dataLabels.distance,
+                style: {
+                  fontSize: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.plotOptions.pie.dataLabels.style.fontSize, // Font nhỏ hơn khi màn hình nhỏ
+                }
+              }
+            }
+          },
+          legend: {
+            itemStyle: {
+              fontSize: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.legend.itemStyle.fontSize, // Font nhỏ hơn trong legend nếu giao diện hẹp
+            },
+            maxHeight: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.legend.maxHeight,
+            width: 'auto',
+            verticalAlign: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.legend.verticalAlign as any,
+            layout: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.legend.layout as any,
+            align: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[0].chartOptions.legend.align as any
+          }
+        }
+      },
+        {
+          condition: {
+            maxHeight: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].condition.maxHeight,
+          },
+          chartOptions: {
+            plotOptions: {
+              pie: {
+                dataLabels: {
+                  connectorWidth: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.plotOptions.pie.dataLabels.connectorWidth,
+                  distance: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.plotOptions.pie.dataLabels.distance,
+                  style: {
+                    fontSize: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.plotOptions.pie.dataLabels.style.fontSize, // Font nhỏ hơn khi màn hình nhỏ
+                  }
+                }
+              }
+            },
+            legend: {
+              itemStyle: {
+                fontSize: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.legend.itemStyle.fontSize, // Font nhỏ hơn trong legend nếu giao diện hẹp
+              },
+              maxHeight: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.legend.maxHeight,
+              width: 'auto',
+              verticalAlign: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.legend.verticalAlign as any,
+              layout: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.legend.layout as any,
+              align: DEFAULT_PIE_CHART_SETTINGS.responsive.rules[1].chartOptions.legend.align as any
+            }
+          }
+        }]
+    }
   };
 
   return (

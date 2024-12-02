@@ -183,10 +183,12 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
   const transformToSerialSerries = (groupedData: any, serries: string[]) => {
     const categories = Object.keys(groupedData)
     const result = serries.map((serri) => {
+      const data = categories.map((category) => groupedData[category][serri] || 0);
       return {
         name: serri,
-        data: categories.map((category) => groupedData[category][serri] || 0),
+        data: data,
         color: serriseColors?.[`${serri}`],
+        visible: data.every(value => value === 0) ? false : true, // Nếu tất cả giá trị = 0, ẩn series
         dataLabels: {
           style: {
             fontWeight: 'normal',
@@ -194,17 +196,19 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
             fontSize: '12px'
           },
           formatter: function () {
-            // console.log(isShowValueOnTop)
             return isShowValueOnTop ? this.y > 0 ? this.y : null : null;
           },
         },
         marker: {
           symbol: 'square'
-        }
+        },
+        // pointPlacement: -0.2,
+        // pointRange: 1
       }
     })
     return { series: result, categories }
   }
+
 
   const transformToPieChartData = (
       allRecords: any[],
@@ -289,14 +293,14 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         groupedData[dateKeyString]++
       }
     })
-    // console.log(groupedData)
+    console.log(groupedData)
     return groupedData
   }
 
   const handleGetData = async (ds: DataSource) => {
     const _ds = ds as FeatureLayerDataSource;
-
     if (_ds && category) {
+    // console.log(_ds)
       // Nếu parseType là 'month', tính toán điều kiện lọc theo tháng và năm từ timestamp
       let whereConditions = [
         `${category} is not null`,
@@ -306,7 +310,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
       ]
           .filter(Boolean)
           .join(' AND ');
-      console.log(colChartParseDateMessage)
+      // console.log(whereConditions)
       // Chỉ áp dụng khi chartType là 'pie' và parseType là 'month'
       if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'month') {
         const date = new Date(colChartParseDateMessage?.timestamp);
@@ -320,9 +324,9 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         // Chuyển đổi thành chuỗi theo định dạng 'YYYY-MM-DD HH:MM:SS'
         const startTimestamp = startOfMonth.toISOString().slice(0, 19).replace('T', ' ');
         const endTimestamp = endOfMonth.toISOString().slice(0, 19).replace('T', ' ');
-
+        console.log(colChartParseDateMessage)
         // Thêm điều kiện lọc theo tháng vào where
-        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+        whereConditions += ` AND ${colChartParseDateMessage.category} BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
       }
 
       if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'year') {
@@ -338,7 +342,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         const endTimestamp = endOfYear.toISOString().slice(0, 19).replace('T', ' ');
 
         // Thêm điều kiện lọc theo năm vào where
-        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+        whereConditions += ` AND ${colChartParseDateMessage.category} BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
       }
 
       if (chartType === 'pie' && colChartParseDateMessage?.parseType === 'date') {
@@ -353,10 +357,10 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         const endTimestamp = endOfDay.toISOString().slice(0, 19).replace('T', ' ');
 
         // Thêm điều kiện lọc theo ngày vào where
-        whereConditions += ` AND NGAYLAPDAT BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
+        whereConditions += ` AND ${colChartParseDateMessage.category} BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
       }
 
-      console.log(whereConditions)
+      // console.log(whereConditions)
       const pageSize = 2000;
       const totalRecords = await _ds.queryCount(whereConditions as FeatureLayerQueryParams);
       const totalPages = Math.ceil(totalRecords.count / pageSize);

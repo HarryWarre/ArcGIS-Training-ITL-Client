@@ -50,6 +50,7 @@ const Chart: React.FC<ColChartProps> = ({
     chart: {
       type: chartType,
       height: `${chartHeight}px`,
+      alignTicks: false,
       events: {
           load: function () {
             const chart = this
@@ -73,12 +74,25 @@ const Chart: React.FC<ColChartProps> = ({
               const min = Math.max(0, offset);
               const max = lengthDateTime;
               const currentMin = chart.xAxis[0].min;
-
-              if (currentMin==0) {
-                chart.xAxis[0].setExtremes(min, max);
-              }
+              const currentMax = chart.xAxis[0].max;
+              // if (currentMin==0 && currentMax) {
+              //   chart.xAxis[0].setExtremes(min, max);
+              // }
             }
           }
+
+        // //   Hide column has 0 value
+        //   this.series.forEach(series => {
+        //     series.data.forEach(point => {
+        //       if (point.y === 0 && point.graphic) {
+        //         // Làm cho cột không hiển thị
+        //         point.graphic.attr({
+        //           width: 0,            // Đặt chiều rộng về 0
+        //           visibility: 'hidden' // Hoặc ẩn hoàn toàn
+        //         });
+        //       }
+        //     });
+        //   });
         }
       }
     },
@@ -118,6 +132,8 @@ const Chart: React.FC<ColChartProps> = ({
     xAxis: {
       // crosshair: false,
       categories: xAxisCategories,
+      minPadding: 0.5,
+      maxPadding: 0.5,
       accessibility: {
         description: 'Days'
       },
@@ -147,8 +163,8 @@ const Chart: React.FC<ColChartProps> = ({
             const chart = this.chart;
             const zoomedRange = e.max - e.min;
             // console.log(zoomedRange)
-            const threshold = 15; // Level zoom to show the value
-            console.log(e.max, e.min) // 17, 11
+            const threshold = 10; // Mức độ hiển thi label
+            // console.log(e.max, e.min) // 17, 11
             chart.series.forEach(series => {
                 series.update({
                     type: 'column',
@@ -170,6 +186,11 @@ const Chart: React.FC<ColChartProps> = ({
       },
       labels:{
         enabled: true,
+      // formatter: function () {
+      //     // Trả về giá trị đầy đủ, không rút gọn
+      //     return this.value; // Hiển thị giá trị gốc thay vì "1k"
+      // }
+        format: '{value}'
       },
     },
     tooltip: {
@@ -229,8 +250,29 @@ const Chart: React.FC<ColChartProps> = ({
     },
     plotOptions: {
       column: {
-        pointPadding: 0.25,
-        borderWidth: 0,
+        // crisp: true,
+        // clip: true,
+        // relativeXValue: true,
+        // pointWidth: 20, // độ rộng của cot
+        maxPointWidth: 200, // độ rộng tối đa của cot
+        // stacking: false,
+        // grouping:false,
+        // pointPadding: 0,
+        // borderWidth: 0,
+        // grouping: true,
+        // groupPadding: 0,
+        pointRange: 1.5, // Chỉnh độ rộng trong ngày
+        // minPointLength: 1,
+        // allowPointSelect: true,
+        series: {
+          dataLabels:{
+            enabled:true,
+            formatter:function(){
+              if(this.y > 0)
+                return this.y;
+            }
+          },
+        },
         events: {
           click: function (event) {
             const categoryDate = new Date(event.point.category); // Chuyển chuỗi thành Date
@@ -241,8 +283,6 @@ const Chart: React.FC<ColChartProps> = ({
               parseType: groupBy,
               timestamp: timestampCategory
             }
-            console.log(previousFilter)
-            console.log(messageColumnChart)
             dispatch(
                 appActions.widgetStatePropChange(
                     "chartParseDate",
@@ -257,8 +297,15 @@ const Chart: React.FC<ColChartProps> = ({
       }
     },
     exporting: {
-      enabled: true
-      // enabled: exportingEnabled,
+      enabled: true,
+        buttons: {
+            contextButton: {
+                menuItems: [
+                    'printChart',     // Tùy chọn in
+                    'viewFullscreen'  // Tùy chọn toàn màn hình
+                ]
+            }
+        }
     },
     legend: {
       enabled: legendEnabled,
@@ -279,7 +326,7 @@ const Chart: React.FC<ColChartProps> = ({
         showInNavigator: false,
       },
       xAxis: {
-        crosshair: true,
+        crosshair: false,
         labels: {
           enabled: false
         },
@@ -289,19 +336,6 @@ const Chart: React.FC<ColChartProps> = ({
       enabled: false
     }
   }
-
-  useEffect(() => {
-    // Truy cập chart sau khi component được render
-    const chart = optionsChart
-    // console.log(chart)
-
-    // Đặt lại extremes khi dữ liệu thay đổi
-    // const newMin = seriesData[0]?.data[0]?.x; // Lấy giá trị x đầu tiên từ dữ liệu mới
-    // const newMax = seriesData[seriesData.length - 1]?.data[0]?.x; // Lấy giá trị x cuối cùng từ dữ liệu mới
-    // if (chart.xAxis[0] && newMin && newMax) {
-    //   chart.xAxis[0].setExtremes(newMin, newMax);
-    // }
-  }, [seriesData]);
 
   return (
 		<div>

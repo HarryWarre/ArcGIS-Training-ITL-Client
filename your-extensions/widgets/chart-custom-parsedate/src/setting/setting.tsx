@@ -224,6 +224,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 						</> : null}
 
           <AppearanceSetting
+		  	chartType = {config.typechart}
             config={config}
             onConfigChange={handleConfigChange}
             onConfigParentChange={handleConfigChangeWithParent}

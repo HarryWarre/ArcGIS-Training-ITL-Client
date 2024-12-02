@@ -4,14 +4,14 @@ import { TextAlignment, TextStyle } from 'jimu-ui/advanced/style-setting-compone
 import React from 'react';
 import { fontList } from './font';
 
-const AppearanceSetting = ({ config, onConfigChange, onConfigParentChange }) => {
+const AppearanceSetting = ({ config, onConfigChange, onConfigParentChange, chartType }) => {
   // Hàm callback tiện ích
   const handleChange = (key, value) => {
     if (onConfigChange) {
       onConfigChange(key, value);
     }
   };
-
+  console.log(chartType)
   return (
     <SettingSection>
       <h4>Appearance</h4>
@@ -26,12 +26,15 @@ const AppearanceSetting = ({ config, onConfigChange, onConfigParentChange }) => 
         />
       </SettingRow>
       {/* Toggle Enable Show value on Top of Column */}
-      <SettingRow flow="wrap" label="Show Value on Top">
-        <Switch
-          checked={config.isShowValueOnTop || false}
-          onChange={(e) => handleChange("isShowValueOnTop", e.target.checked)}
-        />
-      </SettingRow>
+      {chartType != 'pie' ? <>
+        <SettingRow flow="wrap" label="Show Value on Top">
+          <Switch
+              checked={config.isShowValueOnTop || false}
+              onChange={(e) => handleChange("isShowValueOnTop", e.target.checked)}
+          />
+        </SettingRow>
+      </> : null}
+
       <br/>
       {/*Setting chart title */}
       <CollapsablePanel

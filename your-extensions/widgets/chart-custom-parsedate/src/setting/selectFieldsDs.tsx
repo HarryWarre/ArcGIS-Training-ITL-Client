@@ -45,13 +45,17 @@ const SelectFieldsDs = (props: SelectFields) => {
 	useEffect(() => {
 		if (isDataSourcesReady && DatasourceRef.current) {
 			const ds = DatasourceRef.current as DataSource
-
+			console.log(ds) // Pass
 			const schema = ds.getSchema() // Get schema
 			const fieldEntries = Object.entries(schema)[0][1] || []
 			console.log(fieldEntries)
 
-			const fields = ds["layerDefinition"]["fields"]
-			console.log(fields)
+			let fields = ds["layerDefinition"]?.["fields"] ?? []
+			// console.log(fields)
+			if(fields.length == 0){
+				fields = ds["belongToDataSource"]["layerDefinition"]?.["fields"] ?? []
+				console.log(fields)
+			}
 			const toArray = Object.values(fields).map((item) => {
 				const field = item as {
 					name: string

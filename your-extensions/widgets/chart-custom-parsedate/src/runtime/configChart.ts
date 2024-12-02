@@ -11,12 +11,12 @@ export const legend = {
     y: 0,
     // Setting Advance
     itemStyle: {
-        color: '#1b0dec', // Màu chữ của legend
+        color: '#121212', // Màu chữ của legend
         fontFamily: 'Arial, sans-serif', // Font chữ
         fontSize: '14px' // Kích thước chữ
     },
     itemHoverStyle: {
-        color: '#09a1f1' // Màu chữ khi hover
+        color: '#141414' // Màu chữ khi hover
     },
     itemHiddenStyle: {
         color: '#AAAAAA' // Màu chữ khi item bị ẩn
