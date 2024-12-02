@@ -21,6 +21,7 @@ interface SelectFields {
 const { useEffect, useRef, useState } = React
 const SelectFieldsDs = (props: SelectFields) => {
 	const {
+		typechart,
 		useDataSources,
 		handleConfigChange,
 		handleCategoryChange,
@@ -45,16 +46,16 @@ const SelectFieldsDs = (props: SelectFields) => {
 	useEffect(() => {
 		if (isDataSourcesReady && DatasourceRef.current) {
 			const ds = DatasourceRef.current as DataSource
-			console.log(ds) // Pass
+			// console.log(ds) // Pass
 			const schema = ds.getSchema() // Get schema
 			const fieldEntries = Object.entries(schema)[0][1] || []
-			console.log(fieldEntries)
+			// console.log(fieldEntries)
 
 			let fields = ds["layerDefinition"]?.["fields"] ?? []
 			// console.log(fields)
 			if(fields.length == 0){
 				fields = ds["belongToDataSource"]["layerDefinition"]?.["fields"] ?? []
-				console.log(fields)
+				// console.log(fields)
 			}
 			const toArray = Object.values(fields).map((item) => {
 				const field = item as {
@@ -165,17 +166,20 @@ const SelectFieldsDs = (props: SelectFields) => {
 						}
 					</SettingSection>
 
-					<SettingSection>
-						<SettingRow label={"ParseDates"} flow='wrap'>
-							<Switch
-								checked={config?.isParseDates}
-								onChange={(e) => {
-									handleConfigChange("isParseDates", e.target.checked)
-								}}
-								disabled={config.category?.type != "esriFieldTypeDate"}
-							/>
-						</SettingRow>
-					</SettingSection>
+					{typechart !== "pie" ? <>
+						<SettingSection>
+							<SettingRow label={"ParseDates"} flow='wrap'>
+								<Switch
+									checked={config?.isParseDates}
+									onChange={(e) => {
+										handleConfigChange("isParseDates", e.target.checked)
+									}}
+									disabled={config.category?.type != "esriFieldTypeDate"}
+								/>
+							</SettingRow>
+						</SettingSection>
+					</> : null}
+
 				</div>
 			) : (
 				<p>No data source available</p>

@@ -45,24 +45,24 @@ const Chart: React.FC<ColChartProps> = ({
   dispatch,
   category,
   previousFilter
-}) => {
+  }) => {
   const optionsChart: Options = {
     chart: {
       type: chartType,
       height: `${chartHeight}px`,
       alignTicks: false,
       events: {
-          load: function () {
-            const chart = this
-            const gap = 50
+        load: function () {
+          const chart = this
+          const gap = 50
 
-            chart.setTitle(
+          chart.setTitle(
               {},
               {
                 y: chart.title.getBBox().height + gap
               }
-            )
-          },
+          )
+        },
         render: function (e) {
           const chart = this;
           const lengthDateTime = xAxisCategories.length - 1;
@@ -81,18 +81,18 @@ const Chart: React.FC<ColChartProps> = ({
             }
           }
 
-        // //   Hide column has 0 value
-        //   this.series.forEach(series => {
-        //     series.data.forEach(point => {
-        //       if (point.y === 0 && point.graphic) {
-        //         // Làm cho cột không hiển thị
-        //         point.graphic.attr({
-        //           width: 0,            // Đặt chiều rộng về 0
-        //           visibility: 'hidden' // Hoặc ẩn hoàn toàn
-        //         });
-        //       }
-        //     });
-        //   });
+          // //   Hide column has 0 value
+          //   this.series.forEach(series => {
+          //     series.data.forEach(point => {
+          //       if (point.y === 0 && point.graphic) {
+          //         // Làm cho cột không hiển thị
+          //         point.graphic.attr({
+          //           width: 0,            // Đặt chiều rộng về 0
+          //           visibility: 'hidden' // Hoặc ẩn hoàn toàn
+          //         });
+          //       }
+          //     });
+          //   });
         }
       }
     },
@@ -143,8 +143,8 @@ const Chart: React.FC<ColChartProps> = ({
           const date = new Date(this.value)
           if (groupBy === 'date') {
             return `${date.getDate()} thg ${
-							date.getMonth() + 1
-						}, ${date.getFullYear()}`
+                date.getMonth() + 1
+            }, ${date.getFullYear()}`
           }
           if (groupBy === 'year') {
             return `${date.getFullYear()}`
@@ -160,20 +160,20 @@ const Chart: React.FC<ColChartProps> = ({
       },
       events: { // Show value at top column if zoom to the static level
         afterSetExtremes: function (e) {
-            const chart = this.chart;
-            const zoomedRange = e.max - e.min;
-            // console.log(zoomedRange)
-            const threshold = 10; // Mức độ hiển thi label
-            // console.log(e.max, e.min) // 17, 11
-            chart.series.forEach(series => {
-                series.update({
-                    type: 'column',
-                    dataLabels: {
-                        enabled: zoomedRange <= threshold // On/Off based on zoom
-                    }
-                } as Highcharts.SeriesColumnOptions, false);
-            });
-            chart.redraw();
+          const chart = this.chart;
+          const zoomedRange = e.max - e.min;
+          // console.log(zoomedRange)
+          const threshold = 10; // Mức độ hiển thi label
+          // console.log(e.max, e.min) // 17, 11
+          chart.series.forEach(series => {
+            series.update({
+              type: 'column',
+              dataLabels: {
+                enabled: zoomedRange <= threshold // On/Off based on zoom
+              }
+            } as Highcharts.SeriesColumnOptions, false);
+          });
+          chart.redraw();
         }
       }
     },
@@ -186,10 +186,10 @@ const Chart: React.FC<ColChartProps> = ({
       },
       labels:{
         enabled: true,
-      // formatter: function () {
-      //     // Trả về giá trị đầy đủ, không rút gọn
-      //     return this.value; // Hiển thị giá trị gốc thay vì "1k"
-      // }
+        // formatter: function () {
+        //     // Trả về giá trị đầy đủ, không rút gọn
+        //     return this.value; // Hiển thị giá trị gốc thay vì "1k"
+        // }
         format: '{value}'
       },
     },
@@ -200,8 +200,8 @@ const Chart: React.FC<ColChartProps> = ({
         switch (groupBy) {
           case 'date':
             tooltip += `${date.getDate()} thg ${
-							date.getMonth() + 1
-						}, ${date.getFullYear()}`
+                date.getMonth() + 1
+            }, ${date.getFullYear()}`
             break
           case 'year':
             tooltip += `${date.getFullYear()}`
@@ -237,16 +237,16 @@ const Chart: React.FC<ColChartProps> = ({
       animation: true,
       // outside: true,
       positioner: function (width, height, point) {
-          var x, y;
-          var offset = 30;
-          if (point.index === 0) {
-            x = point.plotX + offset;
-          } else {
-            x = point.plotX - width - offset;
-          }
-          y = point.plotY - 70;
-          return { x: x, y: y };
+        var x, y;
+        var offset = 30;
+        if (point.index === 0) {
+          x = point.plotX + offset;
+        } else {
+          x = point.plotX - width - offset;
         }
+        y = point.plotY - 70;
+        return { x: x, y: y };
+      }
     },
     plotOptions: {
       column: {
@@ -298,14 +298,14 @@ const Chart: React.FC<ColChartProps> = ({
     },
     exporting: {
       enabled: true,
-        buttons: {
-            contextButton: {
-                menuItems: [
-                    'printChart',     // Tùy chọn in
-                    'viewFullscreen'  // Tùy chọn toàn màn hình
-                ]
-            }
+      buttons: {
+        contextButton: {
+          menuItems: [
+            'printChart',     // Tùy chọn in
+            'viewFullscreen'  // Tùy chọn toàn màn hình
+          ]
         }
+      }
     },
     legend: {
       enabled: legendEnabled,
@@ -338,13 +338,13 @@ const Chart: React.FC<ColChartProps> = ({
   }
 
   return (
-		<div>
-			<HighchartsReact
-				highcharts={Highcharts}
-				options={optionsChart}
-				constructorType={'stockChart'}
-			/>
-		</div>
+      <div>
+        <HighchartsReact
+            highcharts={Highcharts}
+            options={optionsChart}
+            constructorType={'stockChart'}
+        />
+      </div>
   )
 }
 

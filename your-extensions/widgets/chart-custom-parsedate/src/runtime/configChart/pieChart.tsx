@@ -1,8 +1,8 @@
 import React from 'react';
-import Highcharts, { type Options } from '../../../../node_plugin/node_modules/highcharts';
-import HighchartsReact from '../../../../node_plugin/node_modules/highcharts-react-official';
-import exporting from '../../../../node_plugin/node_modules/highcharts/modules/exporting';
-import {DEFAULT_PIE_CHART_SETTINGS} from "./configChart/piechartConfig";
+import Highcharts, { type Options } from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
+import exporting from 'highcharts/modules/exporting';
+import {DEFAULT_PIE_CHART_SETTINGS} from "./piechartConfig";
 
 // Kích hoạt module Exporting
 exporting(Highcharts);
@@ -88,7 +88,7 @@ const PieChart: React.FC<PieChartProps> = ({
           formatter: function () {
             return this.percentage >= 10 ? Highcharts.numberFormat(this.percentage, 1) + '%' : null;
           },
-          distance: -50,
+          distance: -45, //45 cho height 400px và
           style: {
             color: 'black',
             fontSize: '14px',
@@ -125,7 +125,7 @@ const PieChart: React.FC<PieChartProps> = ({
               var x = this.slicedTranslation.translateX + this.dataLabel.translateX;
               var y = this.slicedTranslation.translateY + this.dataLabel.translateY;
 
-              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 400) {
+              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 399) {
                 // Animate dataLabel đến vị trí mới
                 this.dataLabel.animate({
                   translateX: x,
@@ -145,7 +145,7 @@ const PieChart: React.FC<PieChartProps> = ({
               // Lấy vị trí ban đầu
               var initial = this.dataLabel.initialPosition;
 
-              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 400) {
+              if (this.series.chart.chartWidth >= 500 || this.series.chart.chartHeight > 399) {
                 // Animate dataLabel quay về vị trí ban đầu
                 this.dataLabel.animate({
                   translateX: initial.translateX,

@@ -12,7 +12,7 @@ import { useSelector} from 'react-redux'
 import { type IMConfig } from '../config'
 import Chart from './chart'
 import { formatDate, formatMonth, formatYear } from './utils'
-import PieChart from './pieChart'
+import PieChart from './configChart/pieChart'
 
 /**
  * Hiện tại bị lỗi phần nếu filter sử dụng trên 2 Feature Layer Datasource, sẽ bị lỗi (do đang lâý datasource đầu tiên)
@@ -293,7 +293,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         groupedData[dateKeyString]++
       }
     })
-    console.log(groupedData)
+    // console.log(groupedData)
     return groupedData
   }
 
@@ -324,7 +324,7 @@ const Widget = (props: AllWidgetProps<IMConfig>) => {
         // Chuyển đổi thành chuỗi theo định dạng 'YYYY-MM-DD HH:MM:SS'
         const startTimestamp = startOfMonth.toISOString().slice(0, 19).replace('T', ' ');
         const endTimestamp = endOfMonth.toISOString().slice(0, 19).replace('T', ' ');
-        console.log(colChartParseDateMessage)
+        // console.log(colChartParseDateMessage)
         // Thêm điều kiện lọc theo tháng vào where
         whereConditions += ` AND ${colChartParseDateMessage.category} BETWEEN timestamp '${startTimestamp}' AND timestamp '${endTimestamp}'`;
       }

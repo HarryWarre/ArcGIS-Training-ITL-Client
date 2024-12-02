@@ -71,7 +71,7 @@ const QueryActionSetting: React.FC<ActionSettingProps<IMConfig>> = (props) => {
         if (!field) return;
 
         if (config.useDataSource) {
-            console.log(config)
+            // console.log(config)
             onSettingChange({
                 actionId,
                 config: config

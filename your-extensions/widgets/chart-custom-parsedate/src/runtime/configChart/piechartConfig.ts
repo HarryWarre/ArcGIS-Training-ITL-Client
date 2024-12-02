@@ -75,7 +75,7 @@ export const DEFAULT_PIE_CHART_SETTINGS = {
             },
             {
                 condition: {
-                    maxHeight: 400, // Áp dụng khi chiều cao nhỏ hơn hoặc bằng 400px
+                    maxHeight: 399, // Áp dụng khi chiều cao nhỏ hơn hoặc bằng 399px
                 },
                 chartOptions: {
                     plotOptions: {
@@ -84,7 +84,7 @@ export const DEFAULT_PIE_CHART_SETTINGS = {
                                 connectorWidth: 0, // Không hiển thị đường nối
                                 distance: 10,      // Khoảng cách nhãn tới trung tâm
                                 style: {
-                                    fontSize: '30px', // Font kích thước lớn hơn
+                                    fontSize: '17px', // Font kích thước lớn hơn
                                 }
                             }
                         }

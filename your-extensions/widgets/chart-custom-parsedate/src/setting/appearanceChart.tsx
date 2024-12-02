@@ -11,7 +11,7 @@ const AppearanceSetting = ({ config, onConfigChange, onConfigParentChange, chart
       onConfigChange(key, value);
     }
   };
-  console.log(chartType)
+  // console.log(chartType)
   return (
     <SettingSection>
       <h4>Appearance</h4>

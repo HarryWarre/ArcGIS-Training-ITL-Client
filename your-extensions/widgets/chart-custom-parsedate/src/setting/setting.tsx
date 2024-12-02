@@ -34,12 +34,12 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 			...
 		}
 	)
-	console.log(config)
+	// console.log(config)
 	const [datasource, setDatasource] = useState(null);
 
-	useEffect(() => {
-		console.log(props)
-	}, [props])
+	// useEffect(() => {
+	// 	console.log(props)
+	// }, [props])
 
 	const onToggleUseDataEnable = (useDataSourcesEnabled: boolean) => {
 		props.onSettingChange({
@@ -109,7 +109,7 @@ const Setting = (props: AllWidgetSettingProps<IMConfig>) => {
 	}
 
 	const handleDatasourceReady = (ds) => {
-    console.log("Datasource received:", ds);
+    // console.log("Datasource received:", ds);
     setDatasource(ds); // Lưu datasource vào state
   };
 
